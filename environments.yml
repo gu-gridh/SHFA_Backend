@@ -1,0 +1,38 @@
+name: shfa
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - mysqlclient
+  - ipykernel
+  - gdal
+  - poppler
+  - django
+  - django-filter
+  - djangorestframework
+  - djangorestframework-gis
+  - django-cors-headers
+  - pyvips
+  - gunicorn
+  - psycopg2-binary
+  - requests
+  - bs4
+  - tqdm
+  - pip:
+    - django-admin-interface
+    - drf-generators
+    - drf-dynamic-fields
+    - django-cleanup
+    - django-polymorphic
+    - django-admin-autocomplete-filter
+    - django-admin-numeric-filter
+    - django-leaflet-admin-list
+    - django-ckeditor
+    - django-admin-rangefilter
+    - django-markdownfield
+    - djangorestframework-xml
+    - django_better_admin_arrayfield
+    - django-map-widgets
