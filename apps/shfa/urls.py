@@ -64,7 +64,7 @@ urlpatterns = [
     path('', include(router.urls)),
 
     # add oai-pmh end points
-    #                                                                                                                 path(rf'{endpoint}/OAICat/', views.oai, name="oai"),
+    path(rf'{endpoint}/OAICat/', views.oai, name="oai"),
     # Automatically generated views
     *utils.get_model_urls('shfa', endpoint,
                           exclude=['image', 'site', 'compilation', 'image_keywords',
