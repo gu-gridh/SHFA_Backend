@@ -58,7 +58,7 @@ router.register(rf'{endpoint}/image', views.IIIFImageViewSet, basename='image')
 #                 views.NullVisualizationGroupViewset, basename='Null Visualization images')    
 
 # url for contact form
-router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
+# router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),
