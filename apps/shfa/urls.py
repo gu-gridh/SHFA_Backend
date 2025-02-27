@@ -6,7 +6,6 @@ from .views import oai
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
-contact_endpoint = utils.build_contact_form_endpoint("shfa")
 
 documentation = utils.build_app_api_documentation("shfa", endpoint)
 
@@ -58,7 +57,7 @@ router.register(rf'{endpoint}/null_visualization_group',
                 views.NullVisualizationGroupViewset, basename='Null Visualization images')    
 
 # url for contact form
-router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
+router.register(rf'{endpoint}/contact', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),

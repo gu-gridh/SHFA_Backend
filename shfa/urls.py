@@ -23,14 +23,12 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework import routers
-from apps.shfa.views import ContactFormViewSet as contact
 
 admin.site.index_title = _('admin.site.index_title')
 admin.site.site_header = _('admin.site.site_header')
 admin.site.site_title = _('admin.site.site_title')
 
 router = routers.DefaultRouter()
-contatc_endpoint = build_contact_form_endpoint("shfa")
 
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
@@ -40,8 +38,6 @@ apps = [path('', include(f"apps.{app['name']}.urls")) for app in settings.APPS_L
 
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls), 
-    path(rf'{contatc_endpoint}', contact, name='contact'),
-    # path('success/', success, name='success'),
     *apps,
     prefix_default_language=False
 )
