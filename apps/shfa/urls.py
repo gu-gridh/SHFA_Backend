@@ -6,7 +6,7 @@ import shfa.utils as utils
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
-contact_endpoint = utils.build_contact_form_endpoint("shfa")
+# contact_endpoint = utils.build_contact_form_endpoint("shfa")
 
 documentation = utils.build_app_api_documentation("shfa", endpoint)
 
