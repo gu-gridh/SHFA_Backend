@@ -1,0 +1,116 @@
+﻿{% load oai_pmh %}
+{% block content %}
+<rdf:RDF xmlns="http://kulturarvsdata.se/ksamsok#" xmlns:foaf="http://xmlns.com/foaf/0.1/#"
+		xmlns:geoF="http://www.mindswap.org/2003/owl/geo/geoFeatures20040307.owl#"
+		xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:time="http://www.w3.org/2006/time#">
+  <Entity rdf:about="http://kulturarvsdata.se/{{"shfa"}}/{{"bild"}}/{{data.legacy_id}}">
+    <ksamsokVersion>0.99</ksamsokVersion>
+    <buildDate>{% now "Y-m-d" %}</buildDate>
+    <createdDate>{{data.created_at|date:"Y-m-d"}}</createdDate>
+    <lastChangedDate>{{data.updated_at|date:"Y-m-d"}}</lastChangedDate>
+    <serviceOrganization>{{"shfa"}}</serviceOrganization>
+    <serviceName>{{"shfabild"}}</serviceName>
+    <url>https://shfa.dh.gu.se/search/iiif/{{data.uuid}}.tif/meta/{{data.id}}</url>
+    <thumbnail>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</thumbnail>
+    <mediaType>{{"image/jpeg"}}</mediaType>
+    <dataQuality rdf:resource="{{"http://kulturarvsdata.se/resurser/DataQuality#raw"}}" />
+    <itemType rdf:resource="{{"http://kulturarvsdata.se/resurser/EntityType#photo"}}" />
+    <itemTitle>{{data.site.raa_id}}</itemTitle>
+    <itemLicense rdf:resource="http://kulturarvsdata.se/resurser/License#CC-BY"/>
+    <itemLicenseUrl rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
+    <itemName rdf:nodeID="name001" />
+    <itemLabel>{{data.rock_carving_object.name}}</itemLabel>
+    <itemMotiveWord>{% get_image_tags data %}</itemMotiveWord>
+    <itemTechnique>{{type.text}}</itemTechnique>
+    <itemNumber rdf:nodeID="num001"/>
+    <context rdf:nodeID="ctx001" />
+    <visualizes>http://kulturarvsdata.se/raa/lamning/{{data.site.ksamsok_id}}</visualizes>
+    <image rdf:nodeID="im001" />
+    <presentation rdf:parseType="Literal" xmlns:pres="http://kulturarvsdata.se/presentation#">
+      <pres:item>
+        <pres:version>0.99</pres:version>
+        <pres:entityUri>https://shfa.dh.gu.se/search/iiif/{{data.uuid}}.tif/meta/{{data.id}}</pres:entityUri>
+        <pres:type>{{data.type.text}}</pres:type>
+        <pres:id>{{data.id}}</pres:id>
+        <pres:idLabel>{{data.site.lamning_id}}</pres:idLabel>
+        <pres:itemLabel>{{data.rock_carving_object.name}}</pres:itemLabel>
+        <pres:description> Årtal: {{data.year}}, Institution: {{data.institution.name}}, Samling: {{data.collection.name}}</pres:description>        
+        <pres:context>
+          <pres:event>-</pres:event>
+          <pres:placeLabel>Län:{{data.site.province}}, Kommun:{{data.site.municipalit}}, Socken:{{data.site.parish}}</pres:placeLabel>
+          <pres:timeLabel>-</pres:timeLabel>
+          <pres:nameLabel>-</pres:nameLabel>
+        </pres:context>
+        <georss:where xmlns:georss="http://www.georss.org/georss">
+          <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
+            <gml:coordinates cs="," decimal="." ts=" ">
+            {% for s in data.site.coordinates %}{% if not forloop.first %}{% if forloop.last %}, {% else %}, {% endif %}{% endif %}{{s}}{% endfor %}</gml:coordinates> 
+              </gml:Point>
+            </georss:where>
+        <pres:image>
+          <pres:src type="thumbnail">{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</pres:src>
+          <pres:src type="lowres">{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</pres:src>
+          <pres:src type="highres">{{"https://img.dh.gu.se/diana/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</pres:src>
+          <pres:byline>{{data.author.name}}</pres:byline>
+          <pres:copyright>{{"SHFA"}}</pres:copyright>
+          <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
+        </pres:image>
+        <pres:representations>
+          <pres:representation format="HTML">http://kulturarvsdata.se/shfa/bild/html/{{data.id}}</pres:representation>
+          <pres:representation format="XML">http://kulturarvsdata.se/shfa/bild/xml/{{data.id}}</pres:representation>
+          <pres:representation format="RDF">http://kulturarvsdata.se/shfa/bild/rdf/{{data.id}}</pres:representation>
+        </pres:representations>
+        <pres:organization>Svenskt HällristningsForskningsarkiv</pres:organization>
+        <pres:organizationShort>SHFA</pres:organizationShort>
+        <pres:service>bild</pres:service>
+        <pres:dataQuality>Rådata</pres:dataQuality>
+        <pres:buildDate>{% now "Y-m-d" %}</pres:buildDate>
+      </pres:item>
+    </presentation>
+  </Entity>
+<Context rdf:nodeID="ctx001">
+        <contextType rdf:resource="http://kulturarvsdata.se/resurser/ContextType#exist"/>
+        <contextLabel>Plats</contextLabel> 
+        <continentName>Europa</continentName> 
+        <country rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/country#se"/> 
+        <geoF:county rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/county#14"/> 
+        <geoF:province rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/province#Bo"/> 
+        <geoF:municipality rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/municipality#1435"/> 
+        <geoF:parish rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/parish#1606"/> 
+        <countryName>Sverige</countryName>
+        <countyName>{{data.site.municipalit}}</countyName>
+        <provinceName>{{data.site.province}}</provinceName> 
+        <municipalityName>{{data.site.municipality}}</municipalityName> 
+        <parishName>{{data.site.parish}}</parishName> 
+        <coordinates rdf:parseType="Literal">
+            <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
+            <gml:coordinates cs="," decimal="." ts=" "> {% for s in data.site.coordinates %}{% if not forloop.first %}{% if forloop.last %}, {% else %}, {% endif %}{% endif %}{{s}}{% endfor %}</gml:coordinates>
+        </gml:Point>
+    </coordinates>
+</Context>
+  <Image rdf:nodeID="im001">
+    <mediaType>image/jpeg</mediaType>
+    <thumbnailSource>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</thumbnailSource>
+    <lowresSource>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</lowresSource>
+    <highresSource>{{"https://img.dh.gu.se/diana/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</highresSource>
+    <byline>{{data.author.name}}</byline>
+    <mediaMotiveWord>{% get_image_tags data %}</mediaMotiveWord>
+    <copyright>SHFA</copyright>
+    <mediaLicense rdf:resource="http://kulturarvsdata.se/resurser/License#by-nc-nd"/>
+    <mediaLicenseUrl rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
+  </Image>
+  <ItemNumber rdf:nodeID="num001">
+    <type>RAÄ-nummer</type>
+    <number>{{data.site.raa_id}}</number>
+  </ItemNumber>
+  <ItemNumber rdf:nodeID="num001">
+    <type>Lämningsnummer</type>
+    <number>{{data.site.lamning_id}}</number>
+  </ItemNumber>
+  <ItemName rdf:nodeID="name001">
+    <type>{% get_image_tags data %}</type>
+    <name>hällristning</name>
+  </ItemName>
+</rdf:RDF>
+{% endblock %}

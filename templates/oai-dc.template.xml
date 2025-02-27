@@ -1,0 +1,49 @@
+﻿
+<oai_dc:dc
+    xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/
+    http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+  <dc:title xml:lang="se">${title}</dc:title>
+  <dc:creator>${creator}</dc:creator>
+  <dc:subject>${subject}</dc:subject>
+  <dc:publisher>${publisher}</dc:publisher>
+  <dc:date>Byggdatum: ${BUILDDATE_YYYY-MM-DD}${date}</dc:date>
+  <dc:type>${type}</dc:type>
+  <dc:identifier>${identifier}</dc:identifier>
+  <dc:language>swedish</dc:language>
+</oai_dc:dc>
+
+{% load oai_pmh %}
+<oai_dc:dc 
+    xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/
+    http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+      {% for title in bild.title %}
+          <dc:title>{{ title }}</dc:title>
+      {% endfor %}
+      {% for creator in bild.creator %}
+          <dc:creator>{{ creator }}</dc:creator>
+      {% endfor %}
+      {% for subject in bild.subject %}
+          <dc:subject>{{ subject }}</dc:subject>
+      {% endfor %}
+      {% for publisher in bild.publisher %}
+          <dc:publisher>{{ publisher }}</dc:publisher>
+      {% endfor %}
+      {% for contributor in bild.contributor %}
+          <dc:contributor>{{ contributor }}</dc:contributor>
+      {% endfor %}
+      {% for date in bild.date %}
+          <dc:date>{{ date }}</dc:date>
+      {% endfor %}
+      {% for type in bild.type %}
+          <dc:type>{{ type }}</dc:type>
+      {% endfor %}
+      {% for identifier in bild.identifier %}
+          <dc:identifier>{{ identifier }}</dc:identifier>
+      {% endfor %}
+</oai_dc:dc>
