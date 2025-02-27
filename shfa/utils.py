@@ -151,3 +151,7 @@ def build_app_api_documentation(app_name: str, endpoint: str, template="redoc", 
         name=f'{app_name}-documentation')
 
     return [schema, documentation]
+
+def build_app_endpoint(name: str):
+
+    return f"api/{name}"
