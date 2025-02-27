@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework import routers
 from . import views
 import shfa.utils as utils
-from .views import oai
+# from .views import oai
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
