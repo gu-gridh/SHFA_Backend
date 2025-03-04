@@ -6,7 +6,6 @@ from .views import oai
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
-
 documentation = utils.build_app_api_documentation("shfa", endpoint)
 
 router.register(rf'{endpoint}/image', views.IIIFImageViewSet, basename='image')
