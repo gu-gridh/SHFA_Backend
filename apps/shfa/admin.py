@@ -69,6 +69,11 @@ class PeopleAdmin(admin.ModelAdmin):
     search_fields = ["name", "english_translation"]
     ordering = ('name',)
 
+@admin.register(GettyAATVocab)
+class GettyKeywordAdmin(admin.ModelAdmin):
+    list_display = ["term", "link", "skos_match"]
+    search_fields = ["term", "link", "skos_match"]
+    ordering = ('term',)
 
 @admin.register(KeywordTag)
 class KeywordTagAdmin(admin.ModelAdmin):
@@ -316,6 +321,12 @@ class SHFA3DMeshAdmin(admin.ModelAdmin, DynamicArrayMixin):
 class MetadataFormatAdmin(admin.ModelAdmin):
     list_display = ["prefix"]
 
+
+@admin.register(Set)
+class SetAdmin(admin.ModelAdmin):
+    list_display = ["spec", "name", "description"]
+    search_fields = ["spec", "name", "description"]
+    ordering = ('name',)
 
 @admin.register(ResumptionToken)
 class ResumptionTokenAdmin(admin.ModelAdmin):

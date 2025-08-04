@@ -8,7 +8,8 @@ NUM_PER_PAGE = 25
 
 
 def get_records(params, request):
-    template = "../templates/bild.template.xml"
+    template_ksmsak = "../templates/bild.template.xml"
+    template_ariande = "../templates/records_ariadne.xml"
     error_template = "../templates/error.xml"
     errors = []
     
@@ -51,6 +52,14 @@ def get_records(params, request):
             content_type='text/xml'
         )
     else:
+
+        if metadata_prefix == "ksamsok-rdf":
+            template = template_ksmsak
+        elif metadata_prefix == "ariadne-rdf":
+            template = template_ariande
+        else:
+            template = template_ksmsak
+
         xml_output = render(
             request,
             template_name=template,
@@ -73,12 +82,19 @@ def get_identify(request):
 
 
 def get_list_records(verb, request, params):
-    template = "../templates/listrecords.xml"
+    template_ksamsok = "../templates/listrecords.xml"
+    template_ariande = "../templates/listrecords_ariadne.xml"
     error_template = "../templates/error.xml"
     errors = []
 
+    paginator_images = None
+    images = None
+    resumption_token = None
+    metadata_prefix = None
+    from_timestamp = None
+    until_timestamp = None
+
     if "resumptionToken" in params:
-        # Generate resumptionToken
         (
             paginator_images,
             images,
@@ -92,52 +108,54 @@ def get_list_records(verb, request, params):
         metadata_prefix = params.pop("metadataPrefix")
         if len(metadata_prefix) == 1:
             metadata_prefix = metadata_prefix[0]
-            if not models.MetadataFormat.objects.filter(
-                prefix=metadata_prefix
-            ).exists():
-                errors.append(_error(
-                    "cannotDisseminateFormat", metadata_prefix))
+            if not models.MetadataFormat.objects.filter(prefix=metadata_prefix).exists():
+                errors.append(_error("cannotDisseminateFormat", metadata_prefix))
             else:
-                from_timestamp, until_timestamp = _check_timestamps(
-                    errors, params)
-                
-                images_data = models.Image.objects
-                if from_timestamp is not None:
+                from_timestamp, until_timestamp = _check_timestamps(errors, params)
+
+                images_data = models.Image.objects.all()
+                if from_timestamp:
                     images_data = images_data.filter(created_at__gte=from_timestamp)
-                if until_timestamp is not None:
-                    images_data = images_data.filter(updated_at__gte=until_timestamp)
+                if until_timestamp:
+                    images_data = images_data.filter(updated_at__lte=until_timestamp)
 
-                paginator_images = Paginator(images_data.all(), NUM_PER_PAGE)
+                paginator_images = Paginator(images_data, NUM_PER_PAGE)
                 images = paginator_images.page(1)
-
         else:
-            errors.append(_error(
-                "badArgument_single", ";".join(metadata_prefix)))
+            errors.append(_error("badArgument_single", ";".join(metadata_prefix)))
             metadata_prefix = None
     else:
-        errors.append(_error(
-            "badArgument", "metadataPrefix"))
+        errors.append(_error("badArgument", "metadataPrefix"))
 
     if errors:
-        xml_output = render(
+        return render(
             request,
             template_name=error_template,
-            context={'errors': errors},
-            content_type='text/xml'
-        )
-    else:
-        xml_output = render(
-            request,
-            template,
-            context={'images': images,
-                    'verb': verb,
-                    'paginator': paginator_images,
-                    'metadata_prefix': metadata_prefix,
-                    'from_timestamp': from_timestamp,
-                    'until_timestamp': until_timestamp},
+            context={"errors": errors},
             content_type="text/xml",
+        )
+
+    if metadata_prefix == "ksamsok-rdf":
+        template = template_ksamsok
+    elif metadata_prefix == "shfa-gen-rdf" or metadata_prefix == "ariadne-rdf":
+        template = template_ariande
+    else:
+        template = template_ksamsok  # fallback default
+
+    return render(
+        request,
+        template_name=template,
+        context={
+            "images": images,
+            "paginator": paginator_images,
+            "resumption_token": resumption_token,
+            "metadata_prefix": metadata_prefix,
+            "from_timestamp": from_timestamp,
+            "until_timestamp": until_timestamp,
+        },
+        content_type="text/xml",
     )
-    return xml_output
+
 
 
 def get_list_metadata(request, params):
@@ -171,6 +189,49 @@ def get_list_metadata(request, params):
         )
     return xml_output
 
+def get_list_set(request, params):
+    template = "../templates/listsets.xml"
+    error_template = "../templates/error.xml"
+    errors = []
+
+    # OAI-PMH specification: ListSets may use resumptionToken, but no other params are allowed if it is present
+    if "resumptionToken" in params:
+        resumption_token = params.pop("resumptionToken")[-1]
+        # You would need to implement logic for paginated set listing via resumption token
+        errors.append(_error("noSetHierarchy"))  # Placeholder for your use case
+    else:
+        # No resumptionToken, regular set listing
+        if not models.Set.objects.exists():
+            errors.append(_error("noSetHierarchy"))
+        else:
+            sets = models.Set.objects.all()
+            paginator = Paginator(sets, NUM_PER_PAGE)
+            page_number = int(params.get("page", ["1"])[-1])  # Support page param if desired
+            try:
+                sets_page = paginator.page(page_number)
+            except EmptyPage:
+                sets_page = paginator.page(paginator.num_pages)
+
+    _check_bad_arguments(errors, params)
+
+    if errors:
+        return render(
+            request,
+            template_name=error_template,
+            context={"errors": errors},
+            content_type="text/xml",
+        )
+
+    return render(
+        request,
+        template_name=template,
+        context={
+            "sets": sets_page,
+            "paginator": paginator,
+            "page_number": page_number,
+        },
+        content_type="text/xml",
+    )
 
 
 def _do_resumption_token(params, errors):

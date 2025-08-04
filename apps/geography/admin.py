@@ -29,17 +29,43 @@ class LocalAdministrativeUnitAdmin(admin.GISModelAdmin):
     list_filter = ['name', 'superregion', 'superregion__superregion', 'superregion__superregion__superregion', 'superregion__superregion__superregion__superregion']
     search_fields = ['name', ]
 
-    @admin.display(ordering='superregion__superregion__superregion__superregion', description='Country')
+    @admin.display(
+        ordering='superregion__superregion__superregion__superregion',
+        description='Country'
+    )
     def get_country(self, obj):
-        return obj.superregion.superregion.superregion.superregion
+        sr1 = obj.superregion
+        if not sr1:
+            return None
+
+        sr2 = sr1.superregion
+        if not sr2:
+            return None
+
+        sr3 = sr2.superregion
+        if not sr3:
+            return None
+
+        return sr3.superregion
 
     @admin.display(ordering='superregion__superregion__superregion', description='NUTS1')
     def get_nuts1(self, obj):
-        return obj.superregion.superregion.superregion
+        # Walk up three levels, but bail out early if any link is missing
+        sr = obj.superregion
+        if not sr:
+            return None
+
+        sr2 = sr.superregion
+        if not sr2:
+            return None
+
+        return sr2.superregion
 
     @admin.display(ordering='superregion__superregion', description='NUTS2')
     def get_nuts2(self, obj):
-        return obj.superregion.superregion
+        # only traverse if superregion is not None
+        sr = obj.superregion
+        return sr.superregion if sr and sr.superregion else None
 
 @admin.register(NUTS3)
 class NUTS3Admin(admin.GISModelAdmin):

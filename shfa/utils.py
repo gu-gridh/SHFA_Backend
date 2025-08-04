@@ -155,3 +155,8 @@ def build_app_api_documentation(app_name: str, endpoint: str, template="redoc", 
 def build_app_endpoint(name: str):
 
     return f"api/{name}"
+
+
+def build_contact_form_endpoint(name: str):
+
+    return f"api/{name}/contact/"

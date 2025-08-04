@@ -3,22 +3,88 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from shfa.utils import get_fields, DEFAULT_FIELDS
 from .models import *
 from rest_framework import serializers
+import requests
+from django.conf import settings
+from typing import Dict, List
 
+class DynamicDepthModelSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request', None)
+        if request:
+            try:
+                self.Meta.depth = int(request.query_params.get('depth', 0))  # Default 0
+            except (ValueError, TypeError):
+                self.Meta.depth = 0  
+        else:
+            self.Meta.depth = 0  
+
+class SiteCoordinatesExcludeSerializer(GeoFeatureModelSerializer):
+    parish = serializers.CharField(source='parish.name', default=None)
+    municipality = serializers.CharField(source='municipality.name', default=None)
+    province = serializers.CharField(source='province.name', default=None)
+
+    class Meta:
+        model = Site
+        fields = ['id'] + get_fields(Site, exclude=['coordinates'])
+        geo_field = 'coordinates'
+        depth = 0  # Set a default depth for related objects
 
 class TIFFImageSerializer(DynamicDepthSerializer):
+    width = serializers.SerializerMethodField()
+    height = serializers.SerializerMethodField()
+
+    def get_width(self, obj):
+        info = self.get_iiif_info(obj)
+        return info.get("width")
+
+    def get_height(self, obj):
+        info = self.get_iiif_info(obj)
+        return info.get("height")
+
+    def get_iiif_info(self, obj):
+
+        base_url = "https://img.dh.gu.se/diana/static/"
+        if not obj.iiif_file:
+            return {}
+        # Convert to URL string
+        iiif_file_url = getattr(obj.iiif_file, 'url', None)
+        if not iiif_file_url:
+            return {}
+
+        # Fix relative paths
+        if not iiif_file_url.startswith("http"):
+            iiif_file_url = base_url + iiif_file_url.lstrip("/")
+
+        info_url = f"{iiif_file_url}/info.json"
+
+        response = requests.get(info_url, timeout=3)
+        if response.status_code == 200:
+            return response.json()
+
+        return {}
+    class Meta:
+        model = Image
+        fields = ['id', 'width', 'height'] + get_fields(Image, exclude=['created_at', 'updated_at'])
+class SummarySerializer(DynamicDepthSerializer):
 
     class Meta:
         model = Image
-        fields = ['id']+get_fields(Image, exclude=['created_at', 'updated_at'])
+        fields = ['id']+get_fields(Image, exclude=['created_at', 'updated_at', 'iiif_file', 'file', 'uuid'])
 
 class SiteSerializer(DynamicDepthSerializer):
-
+    # parish = serializers.CharField(source='parish.name', default=None)
+    # municipality = serializers.CharField(source='municipality.name', default=None)
+    # province = serializers.CharField(source='province.name', default=None)
     class Meta:
         model = Site
         fields = ['id']+get_fields(Site, exclude=DEFAULT_FIELDS)
 
 class SiteGeoSerializer(GeoFeatureModelSerializer):
-
+    # parish = serializers.CharField(source='parish.name', default=None)
+    # municipality = serializers.CharField(source='municipality.name', default=None)
+    # province = serializers.CharField(source='province.name', default=None)
+    
     class Meta:
         model = Site
         fields = ['id']+get_fields(Site, exclude=DEFAULT_FIELDS)
@@ -175,3 +241,20 @@ class VisualizationGroupSerializer(DynamicDepthSerializer):
                 images_nested_data.append(nested_representation)
             representation['colour_images'] = images_nested_data
         return representation
+
+
+class GallerySerializer(DynamicDepthModelSerializer):
+    site = SiteCoordinatesExcludeSerializer()
+
+
+    def get_width(self, obj):
+        return TIFFImageSerializer().get_width(obj)
+
+    def get_height(self, obj):
+        return TIFFImageSerializer().get_height(obj)
+
+    class Meta:
+        model = Image
+        fields = ['id'] + get_fields(Image, exclude=DEFAULT_FIELDS)
+        depth = 0
+        geo_field = 'coordinates'

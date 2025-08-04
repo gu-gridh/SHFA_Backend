@@ -53,6 +53,7 @@ def list_request_attributes(
         "GetRecord",
         "ListIdentifiers",
         "ListRecords",
+        "ListSets",
     ]
 
     attributes = "" 
@@ -111,3 +112,48 @@ def resumption_token(
         )
     else:
         return ""
+    
+
+@register.simple_tag
+def get_image_title(image):
+    image_type = image.type.english_translation if image.type else "Unknown type"
+
+    if image.site.internationl_site:
+        title = f"{image_type}: {image.site.placename}, SHFA ID {image.id}"
+    elif image.site.internationl_site is False and image.site.raa_id:
+        title = f"{image_type}: {image.site.raa_id}, SHFA ID {image.id}"
+    else:
+        title = f"{image_type}: {image.site.lamning_id}, SHFA ID {image.id}"
+
+    return title
+
+@register.simple_tag
+def get_image_creators(image):
+    people_names = [person.name for person in image.people.all()]
+    return ", ".join(people_names)
+
+@register.filter
+def get_coord_at(coords, index):
+    """Get coordinate at index."""
+    try:
+        return coords[index]
+    except (IndexError, TypeError):
+        return ''
+
+@register.simple_tag
+def get_image_specification(image):
+    """Get the item specification (what K-samsök calls itemSpecification)."""
+    if image.type:
+        return image.type.english_translation or image.type.text
+    return "Unknown type"
+
+@register.simple_tag
+def get_image_description(image):
+    """Get the item description from keywords/motifs."""
+    keywords = [keyword.text for keyword in image.keywords.all()]
+    return ", ".join(keywords) if keywords else ""
+
+@register.simple_tag
+def get_image_description_type():
+    """Return the type for ItemDescription."""
+    return "motivbeskrivning"
