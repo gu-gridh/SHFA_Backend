@@ -1,0 +1,104 @@
+{% extends "base.xml" %}
+{% load oai_pmh %}
+{% load tz %}
+{% block content %}
+
+<ListRecords>
+    {% for image in images %}
+        {% if image.site.coordinates %}
+            <record>
+                <header>
+                    <identifier>oai:shfa.dh.gu.se:objects/{{ image.id }}</identifier>
+                    <datestamp>{% now "Y-m-d\\TH:i:s\\Z" %}</datestamp>
+                    <setSpec>shfa:images</setSpec>
+                </header>
+
+                <metadata>
+                    <rdf:RDF
+                        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                        xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+                        xmlns:rdf4j="http://rdf4j.org/schema/rdf4j#"
+                        xmlns:sesame="http://www.openrdf.org/schema/sesame#"
+                        xmlns:owl="http://www.w3.org/2002/07/owl#"
+                        xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+                        xmlns:fn="http://www.w3.org/2005/xpath-functions#">
+
+                        <Entity rdf:about="https://shfa.dh.gu.se/image/{{ image.id }}">
+                            <rdf:type rdf:resource="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/AO_Entity"/>
+                            <rdfs:label>Record SHFA {{ image.id }}</rdfs:label>
+                            <has_publisher xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/Swedish%20Rock%20Art%20Research%20Archives"/>
+                            <has_title>{% get_image_title image %}</has_title>
+                            <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{image.updated_at|date:"Y-m-d"}}</was_modified>
+                            <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{image.created_at|date:"Y-m-d"}}</was_issued>
+                            <affiliation>SHFA</affiliation>
+                            <description_en xml:lang="en">{{image.type.english_translation}} of {{image.rock_carving_object.name}}, {{image.site.placename}}, created by {% get_image_creators image %} at {{image.institution.name}} ({{image.year}}).</description_en>
+                            <description_sv xml:lang="sv">{{image.type.text}} av {{image.rock_carving_object.name}}, {{image.site.placename}}, skapad av {% get_image_creators image %} på {{image.institution.name}} ({{image.year}}).</description_sv>
+                            <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
+                            <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
+                            
+                            <image_id>{{image.id}}</image_id>
+                            <shfa_archive_id>{{image.legacy_id}}</shfa_archive_id>
+                            {% if image.site.raa_id %}
+                                <RAÄ_nr>{{image.site.raa_id}}</RAÄ_nr>
+                            {% endif %}
+                            {% if image.site.lamning_id %}
+                                <lamningsnummer>{{image.site.lamning_id}}</lamningsnummer>
+                            {% endif %}
+                            {% if image.site.askeladden_id %}
+                                <askeladden_id>{{image.site.askeladden_id}}</askeladden_id>
+                            {% endif %}
+                            {% if image.site.lokalitet_id %}
+                                <lokalitet_id>{{image.site.lokalitet_id}}</lokalitet_id>
+                            {% endif %}
+                            {% if image.rock_carving_object.name %}
+                            <site_name>{{image.rock_carving_object.name}}</site_name>
+                            {% else %}
+                            <site_name>{{image.site.placename}}</site_name>
+                            {% endif %}
+                            
+                            <country>{{ image.site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                            <municipality>{{ image.site.municipality.superregion.name }}</municipality>
+                            <province>{{ image.site.province.name }}</province>
+                            <parish>{{image.site.parish.name}}</parish>
+                            <county>{{image.site.province.name}}</county>
+                            <latitude>{{ image.site.coordinates.y }}</latitude>
+                            <longitude>{{ image.site.coordinates.x }}</longitude>
+                            <imageURL>{{image.file}}</imageURL>
+                            <URL>https://shfa.dh.gu.se/image/{{image.id}}</URL>
+                            <iiifFile>{{image.iiif_file}}</iiifFile>
+                            <iiifManifest>{{image.iiif_file}}/info.json</iiifManifest>
+                            <copyright>CC-BY</copyright>
+
+                            {% for person in image.people.all %}
+                                <originator>{{ person.english_translation }}</originator>
+                            {% endfor %}
+
+                            <type>{{image.type.text}}</type>
+                            {% if image.subtype %}
+                            <subtype>{{image.subtype.english_translation}}</subtype>
+                            {% endif %}
+                            <year>{{image.year}}</year>
+
+                            {% for period in image.dating_tags.all %}
+                                <period>{{ period.text }}</period>
+                            {% endfor %}
+
+                            {% for tag in image.keywords.all %}
+                                <keywords>
+                                    <sourceLabel>{{tag.text}}</sourceLabel>
+                                    <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                    <matchURI>{{tag.aat_vocab.skos_match}}</matchURI>
+                                    <targetLabel>{{tag.aat_vocab.terms}}</targetLabel>
+                                    <targetURI>{{tag.aat_vocab.link}}</targetURI>
+                                </keywords>
+                            {% endfor %}
+                        </Entity>
+                    </rdf:RDF>
+                </metadata>
+            </record>
+        {% endif %}
+    {% endfor %}
+    {% resumption_token paginator images metadata_prefix from_timestamp until_timestamp %}
+</ListRecords> 
+{% endblock %}
+
