@@ -1,11 +1,14 @@
-
 from django.urls import path, include
 from rest_framework import routers
 from . import views
 import shfa.utils as utils
+from .views import oai
+from .manifest import urls as manifest_urls
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
+contact_endpoint = utils.build_contact_form_endpoint("shfa")
+
 documentation = utils.build_app_api_documentation("shfa", endpoint)
 
 router.register(rf'{endpoint}/image', views.IIIFImageViewSet, basename='image')
@@ -34,12 +37,21 @@ router.register(rf'{endpoint}/search/dating',
                 views.SearchDatinTag, basename='dating Tag')
 router.register(rf'{endpoint}/search/advance',
                 views.AdvancedSearch, basename='advanced search')
+router.register(rf'{endpoint}/search/region',
+                views.RegionSearchViewSet, basename='region search')
+router.register(rf'{endpoint}/search/autocomplete',
+                views.GeneralSearchAutocomplete, basename='general search autocomplete')
+
 # General search url
 router.register(rf'{endpoint}/search', views.GeneralSearch, basename='search')
 
 # urls for the image gallery
 router.register(rf'{endpoint}/gallery',
                 views.GalleryViewSet, basename='gallery')
+router.register(rf'{endpoint}/type_categorized',
+                views.SearchCategoryViewSet, basename='gallery categorized by type')
+router.register(rf'{endpoint}/summary', 
+                views.SummaryViewSet, basename='gallery-summary')
 
 # urls for the 3D models
 router.register(rf'{endpoint}/visualization_groups',
@@ -54,18 +66,19 @@ router.register(rf'{endpoint}/camerameta',
                 views.CameraSpecificationViewSet, basename='camera meta data')
 router.register(rf'{endpoint}/null_visualization_group',
                 views.NullVisualizationGroupViewset, basename='Null Visualization images')    
+# Manifest IIIF endpoints using the ManifestIIIFViewSet in manifest.urls
+path(rf'{endpoint}/iiif/', include('apps.shfa.manifest.urls')),
 
 # url for contact form
-# router.register(rf'{endpoint}/contact', views.ContactFormViewSet, basename='contact')
+router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),
-
     # add oai-pmh end points
-    # path(rf'{endpoint}/OAICat/', views.oai, name="oai"),
+    path(rf'{endpoint}/OAICat/', views.oai, name="oai"),
     
-    # Include manifest URLs
-    path(f'{endpoint}/', include('apps.shfa.manifest.urls')),
+    # Include manifest module URLs
+    path(rf'{endpoint}/iiif/', include('apps.shfa.manifest.urls')),
     
     # Automatically generated views
     *utils.get_model_urls('shfa', endpoint,
