@@ -46,9 +46,9 @@ class CollectionFilter(AutocompleteFilter):
     field_name = 'collection'  # name of the foreign key field
 
 
-class AuthorFilter(AutocompleteFilter):
-    title = _('Creator')  # display title
-    field_name = 'author'  # name of the foreign key field
+# class AuthorFilter(AutocompleteFilter):
+#     title = _('Creator')  # display title
+#     field_name = 'author'  # name of the foreign key field
 
 
 class KeywordFilter(AutocompleteFilter):
@@ -97,10 +97,10 @@ class ImageModel(admin.ModelAdmin):
     fields = ['image_preview', *get_fields(Image, exclude=['id'])]
     readonly_fields = ['legacy_id', 'iiif_file',
                        'uuid', 'image_preview', *DEFAULT_FIELDS]
-    autocomplete_fields = ['site', 'collection', 'author', 'institution',
+    autocomplete_fields = ['site', 'collection', 'institution',
                            'type', 'rock_carving_object', 'subtype']
     list_display = ['thumbnail_preview', 'site', 'rock_carving_object',
-                    'year', 'collection', 'author', 'institution', 'type', 'subtype', 'file']
+                    'year', 'collection', 'institution', 'type', 'subtype', 'file']
     search_fields = ['site__lamning_id', 'site__raa_id', 'rock_carving_object__name',
                      'site__municipality__name', 'site__parish__name', 'subtype__text', 'file']
     list_filter = [
@@ -110,7 +110,7 @@ class ImageModel(admin.ModelAdmin):
         'published',
         InstitutionFilter,
         CollectionFilter,
-        AuthorFilter,
+        # AuthorFilter,
         SiteFilter,
         KeywordFilter,
         'file'
@@ -182,13 +182,13 @@ class CompilationAdmin(admin.ModelAdmin):
     filter_horizontal = ("images",)
 
 
-@admin.register(Author)
-class AuthorAdmin(admin.ModelAdmin):
+# @admin.register(Author)
+# class AuthorAdmin(admin.ModelAdmin):
 
-    readonly_fields = ['legacy_id']
-    list_display = ["name", "english_translation"]
-    search_fields = ["name", "english_translation"]
-    ordering = ('name',)
+#     readonly_fields = ['legacy_id']
+#     list_display = ["name", "english_translation"]
+#     search_fields = ["name", "english_translation"]
+#     ordering = ('name',)
 
 
 @admin.register(Collection)

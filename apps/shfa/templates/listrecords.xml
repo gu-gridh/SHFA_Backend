@@ -31,7 +31,7 @@
                         <url>https://shfa.dh.gu.se/image/{{image.id}}</url>
                         <dcterms:replaces rdf:resource="http://kulturarvsdata.se/shfa/bild/{{image.legacy_id}}"/>
                         <thumbnail>{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</thumbnail>
-                        <mediaType>{{"image/jpeg"}}</mediaType>
+                        <!-- REMOVED: duplicate mediaType should only be in <Image> block -->
                         <dataQuality rdf:resource="{{"http://kulturarvsdata.se/resurser/DataQuality#raw"}}" />
                         <itemType rdf:resource="{{"http://kulturarvsdata.se/resurser/EntityType#photo"}}" />
                         <itemSuperType rdf:resource="http://kulturarvsdata.se/resurser/EntitySuperType#object"/>
@@ -39,15 +39,21 @@
                         <itemLicense rdf:resource="http://kulturarvsdata.se/resurser/License#CC0"/>
                         <itemLicenseUrl rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
 
-                        <!-- FIXED: Replace itemName with itemSpecification and itemDescription -->
-                        <itemSpecification>{% get_image_specification image %}</itemSpecification>
+                        <!-- FIXED: itemSpecification with proper structure -->
+                        <itemSpecification>
+                            <ItemSpecification>
+                                <type>sakord</type>
+                                <spec>{% get_image_specification image %}</spec>
+                            </ItemSpecification>
+                        </itemSpecification>
                         <itemDescription rdf:nodeID="desc001" />
                         
                         <itemLabel>{{image.rock_carving_object.name}}</itemLabel>
                         <itemMotiveWord>{% get_image_tags image %}</itemMotiveWord>
                         <itemTechnique>{{image.type.text}}</itemTechnique>
-                        <ItemNumber rdf:nodeID="num001"/>
-                        <ItemNumber rdf:nodeID="num002"/>
+                        <!-- FIXED: lowercase itemNumber -->
+                        <itemNumber rdf:nodeID="num001"/>
+                        <itemNumber rdf:nodeID="num002"/>
                         <context rdf:nodeID="ctx001" />
                         <visualizes>http://kulturarvsdata.se/raa/lamning/{{image.site.ksamsok_id}}</visualizes>
                         <image rdf:nodeID="im001" />
@@ -67,13 +73,6 @@
                             <pres:timeLabel>-</pres:timeLabel>
                             <pres:nameLabel>-</pres:nameLabel>
                             </pres:context>
-                            {% comment %} <georss:where xmlns:georss="http://www.georss.org/georss">
-                            <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
-                                <gml:coordinates cs="," decimal="." ts=" ">
-                                    {% for s in image.site.coordinates %}{% if not forloop.first %}{% if forloop.last %},{% else %},{% endif %}{% endif %}{{s}}{% endfor %}
-                                </gml:coordinates> 
-                                </gml:Point>
-                            </georss:where> {% endcomment %}
                             <georss:where xmlns:georss="http://www.georss.org/georss">
                                 {% if image.site.coordinates %}
                                     <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
@@ -120,9 +119,6 @@
                             <municipalityName>{{image.site.municipality}}</municipalityName> 
                             <parishName>{{image.site.parish}}</parishName> 
                             <coordinates rdf:parseType="Literal">
-                                {% comment %} <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
-                                    <gml:coordinates cs="," decimal="." ts=" "> {% for s in image.site.coordinates %}{% if not forloop.first %}{% if forloop.last %},{% else %},{% endif %}{% endif %}{{s}}{% endfor %}</gml:coordinates>
-                                </gml:Point> {% endcomment %}
                                 {% if image.site.coordinates %}
                                 <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
                                     <gml:coordinates cs="," decimal="." ts=" ">
@@ -144,14 +140,19 @@
                         <mediaLicense rdf:resource="http://kulturarvsdata.se/resurser/license#by"/>
                         <mediaLicenseUrl rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
                     </Image>
-                    <ItemNumber rdf:nodeID="num001">
-                        <type>RAÄ-nummer</type>
-                        <number>{{image.site.raa_id}}</number>
-                    </ItemNumber>
-                    <ItemNumber rdf:nodeID="num002">
-                        <type>Lämningsnummer</type>
-                        <number>{{image.site.lamning_id}}</number>
-                    </ItemNumber>
+                    
+                    {% comment %} <itemNumber rdf:nodeID="num001"> {% endcomment %}
+                    <ItemNumber>
+                            <type>RAÄ-nummer</type>
+                            <number>{{image.site.raa_id}}</number>
+                        </ItemNumber>
+                    {% comment %} </itemNumber> {% endcomment %}
+                    {% comment %} <itemNumber rdf:nodeID="num002"> {% endcomment %}
+                        <ItemNumber>
+                            <type>Lämningsnummer</type>
+                            <number>{{image.site.lamning_id}}</number>
+                        </ItemNumber>
+                    {% comment %} </itemNumber> {% endcomment %}
                     <ItemDescription rdf:nodeID="desc001">
                         <desc>{% get_image_tags image %}</desc>
                         <type>motivbeskrivning</type>

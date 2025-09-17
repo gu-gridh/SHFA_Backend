@@ -3,9 +3,6 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from shfa.utils import get_fields, DEFAULT_FIELDS
 from .models import *
 from rest_framework import serializers
-import requests
-from django.conf import settings
-from typing import Dict, List
 
 class DynamicDepthModelSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
@@ -226,3 +223,16 @@ class GallerySerializer(DynamicDepthModelSerializer):
         fields = ['id'] + get_fields(Image, exclude=DEFAULT_FIELDS)
         depth = 0
         geo_field = 'coordinates'
+
+
+class RegionSerializer(DynamicDepthSerializer):
+    sites = SiteCoordinatesExcludeSerializer(many=True, read_only=True)
+
+    parish = serializers.CharField(source='parish.name')
+    municipality = serializers.CharField(source='municipality.name')
+    province = serializers.CharField(source='province.name')
+    country = serializers.CharField(source='parish.country.name')
+
+    class Meta:
+        model = Site
+        fields = ['id', 'name', 'country', 'parish', 'province']

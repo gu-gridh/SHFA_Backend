@@ -13,7 +13,7 @@ from rest_framework.viewsets import ViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from shfa.forms import ContactForm
-from django.core.mail import send_mail
+from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
 from rest_framework import status
 from django.contrib.gis.db.models.aggregates import Extent
@@ -22,7 +22,6 @@ from django.db import connection
 from django.utils.functional import cached_property
 from rest_framework.pagination import PageNumberPagination
 from itertools import chain
-
 
 class SiteViewSet(DynamicDepthViewSet):
     serializer_class = serializers.SiteSerializer
@@ -273,18 +272,135 @@ class TypeSearchViewSet(DynamicDepthViewSet):
                 english_translation__icontains=q).order_by('text')
         return queryset
 
-class RegionSearchViewSet(DynamicDepthViewSet):
+
+class SearchVisualizationGroupViewset(DynamicDepthViewSet):
     serializer_class = serializers.SiteCoordinatesExcludeSerializer
 
     def get_queryset(self):
-        q = self.request.GET["region_name"]
-        # Search amoung parishes, municipalities and provinces names    
+        q = self.request.GET.get("site_name", "").strip()
+        
+        # Start with sites that have only 3D models 
         queryset = models.Site.objects.filter(
-            Q(parish__name__icontains=q) | Q(municipality__name__icontains=q) | Q(province__name__icontains=q)
+            Q(shfa3d__isnull=False)
+        ).distinct()
+        
+        # Apply search filter if query exists
+        if q:
+            queryset = queryset.filter(
+                Q(raa_id__icontains=q) |
+                Q(placename__icontains=q) |
+                Q(lamning_id__icontains=q) |
+                Q(ksamsok_id__icontains=q) |
+                Q(askeladden_id__icontains=q) |
+                Q(lokalitet_id__icontains=q)
+            )
+        
+        # Add annotations for counts
+        queryset = queryset.annotate(
+            visualization_group_count=Count('shfa3d', distinct=True),
+            images_count=Count('image', distinct=True)
         )
-        return queryset
-    filterset_fields = get_fields(
-        models.Site, exclude=DEFAULT_FIELDS + ['coordinates'])
+        
+        # Filter to only sites that actually have 3D models or images
+        queryset = queryset.filter(
+            Q(visualization_group_count__gt=0) | Q(images_count__gt=0)
+        )
+        
+        return queryset.order_by('-visualization_group_count', '-images_count', 'raa_id')
+
+    filterset_fields = get_fields(models.Site, exclude=DEFAULT_FIELDS + ['coordinates'])
+
+class RegionSearchViewSet(DynamicDepthViewSet):
+    serializer_class = serializers.RegionSerializer
+    filter_backends = []  # Disable automatic filtering since we're doing custom logic
+
+    def get_queryset(self):
+        # Get search parameter
+        region_query = self.request.GET.get('region_name', '').strip()
+        
+        # Get all unique region combinations from sites with images
+        sites = models.Site.objects.filter(
+            id__in=models.Image.objects.values_list('site', flat=True)
+        )
+
+        # Apply region search filter if provided - use the same relationships as SummaryViewSet
+        if region_query:
+            sites = sites.filter(
+                Q(parish__name__icontains=region_query) |
+                Q(municipality__name__icontains=region_query) |
+                Q(province__name__icontains=region_query) |
+                Q(province__country__name__icontains=region_query) |
+                Q(municipality__superregion__superregion__superregion__superregion__name__icontains=region_query)
+            )
+
+        # Build unique region combinations - use the same fields as SummaryViewSet
+        regions = sites.values(
+            'parish__name',
+            'municipality__name', 
+            'province__name',
+            'province__country__name',
+            'municipality__superregion__superregion__superregion__superregion__name'
+        ).distinct()
+
+        # Filter out completely empty rows
+        regions = regions.exclude(
+            parish__name__isnull=True,
+            municipality__name__isnull=True,
+            province__name__isnull=True,
+            province__country__name__isnull=True,
+            municipality__superregion__superregion__superregion__superregion__name__isnull=True
+        )
+
+        return regions
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Format results as requested
+        results = []
+        seen_regions = set()  # To avoid duplicates
+        
+        for region in queryset:
+            parish = region.get('parish__name')
+            municipality = region.get('municipality__name') 
+            province = region.get('province__name')
+            # Use the same country logic as SummaryViewSet
+            country = (region.get('province__country__name') or 
+                      region.get('municipality__superregion__superregion__superregion__superregion__name'))
+            
+            # Build region string based on available fields
+            if parish and municipality and province and country:
+                region_str = f"{parish}, {municipality}, {province}, {country}"
+            elif municipality and province and country:
+                region_str = f"{municipality}, {province}, {country}"
+            elif province and country:
+                region_str = f"{province}, {country}"
+            elif municipality and country:
+                region_str = f"{municipality}, {country}"
+            elif country:
+                region_str = country
+            else:
+                continue  # Skip if no meaningful data
+            
+            # Avoid duplicates
+            if region_str not in seen_regions:
+                seen_regions.add(region_str)
+                results.append({
+                    "region": region_str,
+                    "parish": parish,
+                    "municipality": municipality,
+                    "province": province,
+                    "country": country
+                })
+
+        # Sort results alphabetically
+        results.sort(key=lambda x: x['region'])
+        
+        return Response({
+            "count": len(results),
+            "results": results
+        })
+
 
 # Add general search query
 class GeneralSearch(DynamicDepthViewSet):
@@ -375,10 +491,60 @@ class AdvancedSearch(DynamicDepthViewSet):
 # New Module search views
 class BaseSearchViewSet(DynamicDepthViewSet):
     """Base class containing common search functionality."""
-    
+
     def parse_multi_values(self, values):
-        """Helper method to parse multiple values from query parameters."""
-        return [v for v in values if v]
+        """Helper method to parse multiple values from query parameters.
+        
+        Supports three formats:
+        1. Multiple parameters: ?param=val1&param=val2
+        2. Ampersand separated: ?param=val1%26val2  
+        3. Comma separated: ?param=val1,val2
+        """
+        parsed_values = []
+        for value in values:
+            if value:
+                # Handle multiple formats
+                if '&' in value:
+                    # Split by & (URL encoded as %26)
+                    parsed_values.extend([v.strip() for v in value.split('&') if v.strip()])
+                elif ',' in value:
+                    # Split by comma
+                    parsed_values.extend([v.strip() for v in value.split(',') if v.strip()])
+                else:
+                    # Single value
+                    parsed_values.append(value.strip())
+        return parsed_values
+
+    def parse_region_groups(self, region_values):
+        """
+        Parse region values into groups for OR operation between groups, AND within groups.
+        
+        Each region_name parameter becomes a group where all parts must match (AND).
+        Between different region_name parameters, we use OR.
+        
+        Example:
+        ?region_name=Angelstad,Ljungby,Kronobergs län,SVERIGE&region_name=Alsen,Krokom,Jämtland,SVERIGE
+        
+        Returns: [
+            ['Angelstad', 'Ljungby', 'Kronobergs län', 'SVERIGE'],
+            ['Alsen', 'Krokom', 'Jämtland', 'SVERIGE']
+        ]
+        """
+        region_groups = []
+        
+        for region_value in region_values:
+            if not region_value:
+                continue
+                
+            # Split by comma to get individual parts
+            region_parts = [part.strip() for part in region_value.split(',')]
+            
+            # Filter out empty parts and add to groups
+            filtered_parts = [part for part in region_parts if part]
+            if filtered_parts:
+                region_groups.append(filtered_parts)
+        
+        return region_groups
     
     def get_search_fields_mapping(self):
         """Define the mapping between search parameters and model fields."""
@@ -389,7 +555,9 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             "dating_tag": ["dating_tags__text", "dating_tags__english_translation"],
             "image_type": ["type__text", "type__english_translation"],
             "institution_name": ["institution__name"],
-            "region_name": ["site__parish__name", "site__municipality__name", "site__province__name"],
+            "region_name": ["site__parish__name", "site__municipality__name", "site__province__name",
+                           "site__province__country__name", 
+                           "site__municipality__superregion__superregion__superregion__superregion__name"],
             "visualization_group": ["group__text"],
             "keyword": ["keywords__text", "keywords__english_translation",
                             "keywords__category", "keywords__category_translation"],
@@ -408,37 +576,106 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             "general": ["q"],
         }, ALL_FIELDS
     
-    def build_search_query(self, params, search_type="general", operator="OR"):
-        """Build dynamic search query based on parameters."""
-        TYPE_FIELD_KEYS, ALL_FIELDS = self.get_type_field_keys()
+    def build_search_query(self, params, search_type="advanced", operator="OR"):
+        """
+        Build search structure that supports AND operators with separate joins.
+        Special handling for region_name with multiple parameter groups.
         
+        Returns dict with:
+        - chain_filters: list of Q objects applied sequentially (for AND operations)  
+        - single_q: combined Q object for OR operations
+        """
+        TYPE_FIELD_KEYS, ALL_FIELDS = self.get_type_field_keys()
         field_keys = TYPE_FIELD_KEYS.get(search_type, list(ALL_FIELDS.keys()))
         mapping_filter_fields = {key: ALL_FIELDS[key] for key in field_keys}
-        
-        query_conditions = []
-        
-        # Apply dynamic search filters
+
+        operator_controlled_fields = ["author_name", "keyword", "dating_tag"]
+        field_operator_mapping = {
+            "author_name": "author_operator",
+            "keyword": "keyword_operator",
+            "dating_tag": "dating_operator"
+        }
+
+        chain_filters = []   # For AND operations (separate joins)
+        grouped_qs = []      # For OR operations (combined)
+
         for param_key, fields in mapping_filter_fields.items():
-            values = self.parse_multi_values(params.getlist(param_key))
-            if values:
-                q_obj = Q()
-                for value in values:
-                    sub_q = Q()
-                    for field in fields:
-                        sub_q |= Q(**{f"{field}__icontains": value})
-                    q_obj |= sub_q
-                query_conditions.append(q_obj)
+            raw_values = params.getlist(param_key)
+            if not raw_values:
+                continue
+
+            # Special handling for region_name with group logic
+            if param_key == "region_name":
+                region_groups = self.parse_region_groups(raw_values)
+                if region_groups:
+                    group_or_conditions = []
+                    
+                    # Each group (parameter) becomes an AND condition
+                    for region_parts in region_groups:
+                        group_and_conditions = []
+                        
+                        # Within each group, all parts must match (AND)
+                        for part in region_parts:
+                            part_or_conditions = []
+                            for field in fields:
+                                part_or_conditions.append(Q(**{f"{field}__icontains": part}))
+                            
+                            if part_or_conditions:
+                                group_and_conditions.append(
+                                    reduce(lambda x, y: x | y, part_or_conditions)
+                                )
+                        
+                        # Combine all parts in this group with AND
+                        if group_and_conditions:
+                            group_condition = reduce(lambda x, y: x & y, group_and_conditions)
+                            group_or_conditions.append(group_condition)
+                    
+                    # Combine all groups with OR
+                    if group_or_conditions:
+                        region_query = reduce(lambda x, y: x | y, group_or_conditions)
+                        grouped_qs.append(region_query)
+                
+                continue  # Skip normal processing for region_name
+
+            # Normal processing for other fields
+            values = self.parse_multi_values(raw_values)
+            if not values:
+                continue
+
+            if param_key in operator_controlled_fields:
+                op_param = field_operator_mapping.get(param_key)
+                field_operator = params.get(op_param, operator).upper()
+                if field_operator not in ["AND", "OR"]:
+                    field_operator = "OR"
+            else:
+                field_operator = "OR"
+
+            # Build OR cluster per value
+            per_value_clusters = []
+            for val in values:
+                cluster = Q()
+                for f in fields:
+                    cluster |= Q(**{f"{f}__icontains": val})
+                per_value_clusters.append(cluster)
+
+            if field_operator == "AND" and param_key in operator_controlled_fields:
+                # Keep each cluster separate for separate joins
+                chain_filters.extend(per_value_clusters)
+            else:
+                # Collapse to one OR group
+                if per_value_clusters:
+                    or_group = reduce(lambda x, y: x | y, per_value_clusters)
+                    grouped_qs.append(or_group)
+
+        # Combine OR groups
+        single_q = None
+        if grouped_qs:
+            single_q = reduce(lambda x, y: x & y, grouped_qs)
         
-        # Combine conditions based on operator
-        if query_conditions:
-            combined_q = reduce(
-                (lambda x, y: x & y) if operator == "AND" else (lambda x, y: x | y),
-                query_conditions
-            )
-            return combined_q
-        
-        return Q()
-            
+        return {
+            "chain_filters": chain_filters,
+            "single_q": single_q
+        }
 
     def apply_bbox_filter(self, queryset, bbox_param):
         """Apply bounding box filter to queryset."""
@@ -476,27 +713,37 @@ class SearchCategoryViewSet(BaseSearchViewSet):
     def get_queryset(self):
         params = self.request.GET
         operator = params.get("operator", "OR")
-        search_type = params.get("search_type")
-        category_type = params.get("category_type")
+        search_type = params.get("search_type", "general")  # Default to general
 
         queryset = self.get_base_image_queryset()
 
-        # Filter by category_type first for performance
-        if category_type:
-            queryset = queryset.filter(type__text__iexact=category_type)
+        # Apply search filters using the corrected build_search_query method
+        if any(params.get(field) for field in ["site_name", "author_name", "dating_tag", 
+                                              "image_type", "institution_name", "region_name", 
+                                              "visualization_group", "keyword", "rock_carving_object", "q"]):
+            search_struct = self.build_search_query(params, search_type, operator)
+            
+            # Apply chain filters first (each creates separate join)
+            for q_part in search_struct["chain_filters"]:
+                queryset = queryset.filter(q_part)
+            
+            # Apply combined OR query
+            if search_struct["single_q"]:
+                queryset = queryset.filter(search_struct["single_q"])
 
-        # Apply search filters using base class method
-        search_query = self.build_search_query(params, search_type, operator)
-        if search_query:
-            queryset = queryset.filter(search_query)
-
-        # Apply bbox filtering using base class method
+        # Apply bbox filter
         queryset = self.apply_bbox_filter(queryset, params.get("in_bbox"))
-
         return queryset.distinct().order_by('type__order', 'id')
 
+
     def categorize_by_type(self, queryset):
-        """Groups queryset results by type with counts."""
+        """Groups queryset results by type with counts.
+        Includes an 'All' category that contains the total count of all images.
+        """
+        # Get total count for "All" category
+        total_count = queryset.count()
+        
+        # Get counts by type
         grouped_data = (
             queryset
             .values("type__id", "type__text", "type__english_translation")
@@ -504,16 +751,28 @@ class SearchCategoryViewSet(BaseSearchViewSet):
             .order_by("-img_count", "type__order")
         )
 
-        category_dict = {
-            entry["type__id"]: {
-                "type": entry["type__text"],
-                "type_translation": entry.get("type__english_translation", "Unknown"),
-                "count": entry["img_count"],
-            }
-            for entry in grouped_data
-        }
-        return list(category_dict.values())
+        categories = []
+        
+        # Add "All" category first
+        if total_count > 0:
+            categories.append({
+                "type_id": "all",
+                "type": "All",
+                "type_translation": "All Images",
+                "count": total_count,
+            })
 
+        # Add individual type categories
+        for entry in grouped_data:
+            if entry["type__text"]:  # Only include entries with valid type text
+                categories.append({
+                    "type_id": entry["type__id"],
+                    "type": entry["type__text"],
+                    "type_translation": entry.get("type__english_translation", "Unknown"),
+                    "count": entry["img_count"],
+                })
+
+        return categories
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -537,57 +796,61 @@ class BoundingBoxPagination(PageNumberPagination):
         Uses PostgreSQL's fast row estimation instead of a slow COUNT(*).
         """
         try:
-            # Use actual count for smaller datasets, estimate for larger ones
-            if hasattr(self, '_count_cache'):
-                return self._count_cache
-                
+            # This is getting the TOTAL table size, not your filtered queryset!
             with connection.cursor() as cursor:
                 cursor.execute("SELECT reltuples::BIGINT FROM pg_class WHERE relname = %s", 
                             [self.object_list.model._meta.db_table])
                 estimate = cursor.fetchone()[0]
                 
-                # Cap the estimate to prevent runaway memory usage
+                # This returns the entire table size, not your search results
                 self._count_cache = min(estimate + 1000, 1000000)  # Max 1M
                 return self._count_cache
         except Exception:
-                # Fallback for safety if the estimation fails
-                return 10000 
+            return 10000  # This fallback is probably what you're seeing
 
-    def get_paginated_response(self, data):
-        return Response({
-            'count': self.count,
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'estimated_count': True, # Inform the client this is an estimate
-            'results': data
-        })
+        def get_paginated_response(self, data):
+            return Response({
+                'count': self.count,
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link(),
+                'estimated_count': True, # Inform the client this is an estimate
+                'results': data
+            })
     
 class GalleryViewSet(BaseSearchViewSet):
-    """Search images by category with pagination."""
+    """Search images by category with pagination and full search capabilities."""
     serializer_class = serializers.GallerySerializer
-    pagination_class = BoundingBoxPagination # Use our new optimized class
+    pagination_class = BoundingBoxPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['id'] + get_fields(models.Image, exclude=['iiif_file', 'file'])
     bbox_filter_field = 'coordinates'
 
     def get_queryset(self):
-        # This method remains the same, defining the filtering logic.
         params = self.request.GET
         operator = params.get("operator", "OR")
-        search_type = params.get("search_type")
+        search_type = params.get("search_type", "advanced")  # Default to advanced
         category_type = params.get("category_type")
 
         # Start with minimal queryset for performance
         queryset = models.Image.objects.filter(published=True)
 
-        # Apply filters in order of selectivity (most selective first)
-        if category_type:
+        # Apply category filter - handle "All" category
+        if category_type and category_type.lower() != "all":
             queryset = queryset.filter(type__text__iexact=category_type)
 
-        # Apply search query
-        search_query = self.build_search_query(params, search_type, operator)
-        if search_query:
-            queryset = queryset.filter(search_query)
+        # Apply search filters
+        if any(params.get(field) for field in ["site_name", "author_name", "dating_tag", 
+                                              "image_type", "institution_name", "region_name", 
+                                              "visualization_group", "keyword", "rock_carving_object", "q"]):
+            search_struct = self.build_search_query(params, search_type, operator)
+            
+            # Apply chain filters first (each creates separate join)
+            for q_part in search_struct["chain_filters"]:
+                queryset = queryset.filter(q_part)
+            
+            # Apply combined OR query
+            if search_struct["single_q"]:
+                queryset = queryset.filter(search_struct["single_q"])
 
         # Apply bounding box filter
         bbox_param = params.get("in_bbox")
@@ -676,9 +939,7 @@ class GalleryViewSet(BaseSearchViewSet):
         )
 
     def calculate_bbox_for_image_ids(self, image_ids):
-        """
-        Optimized bbox calculation with better error handling.
-        """
+        """Optimized bbox calculation with better error handling."""
         if not image_ids:
             return None
 
@@ -716,7 +977,6 @@ class GalleryViewSet(BaseSearchViewSet):
         context.update({
             'request': self.request,
             'view': self,
-            # Add any other context needed for serializer optimization
         })
         return context
 
@@ -847,18 +1107,17 @@ class SummaryViewSet(BaseSearchViewSet):
 
         queryset = self.get_base_image_queryset()
 
-        # Filter by category_type first for performance
         if category_type:
             queryset = queryset.filter(type__text__iexact=category_type)
 
-        # Apply search filters using base class method
-        search_query = self.build_search_query(params, search_type, operator)
-        if search_query:
-            queryset = queryset.filter(search_query)
+        # Apply search filters using new structure
+        search_struct = self.build_search_query(params, search_type, operator)
+        for q_part in search_struct["chain_filters"]:
+            queryset = queryset.filter(q_part)
+        if search_struct["single_q"]:
+            queryset = queryset.filter(search_struct["single_q"])
 
-        # Apply bbox filtering using base class method
         queryset = self.apply_bbox_filter(queryset, params.get("in_bbox"))
-
         return queryset.distinct().order_by('type__order', 'id')
 
     def list(self, request, *args, **kwargs):
@@ -983,23 +1242,17 @@ class SummaryViewSet(BaseSearchViewSet):
             }
             for entry in type_counts if entry["type__text"]
         ]
-        
+
+        # In the summarize_results method, replace the motifs section with:
         summary["motifs"] = [
             {
                 "motif": entry["keywords__text"],
                 "translation": entry.get("keywords__english_translation"),
-                "count": entry["count"]
+                "count": entry["count"],
+                "figurative": entry.get("keywords__figurative", False)
             }
             for entry in motif_counts
-            if "figure" in (entry.get("keywords__category_translation") or "").lower()
-        ] + [
-            {
-                "figurative motif": entry["keywords__text"],
-                "translation": entry.get("keywords__english_translation"),
-                "count": entry["count"]
-            }
-            for entry in motif_counts
-            if entry.get("keywords__figurative") is True
+            if "figure" in (entry.get("keywords__category_translation") or "").lower() and entry["keywords__text"]
         ]
 
         summary["year"] = [
@@ -1071,29 +1324,3 @@ def oai(request):
             output = verb_error(request)
 
     return output
-
-
-# Add contact form view
-class ContactFormViewSet(viewsets.ViewSet):
-    def create(self, request):
-        if request.method == 'POST':
-            form = ContactForm(request.POST)
-            if form.is_valid():
-                # Process the form data
-                name = form.cleaned_data['name']
-                email = form.cleaned_data['email']
-                subject = form.cleaned_data['subject']
-                message = form.cleaned_data['message']
-                
-                # Send an email
-                send_mail(
-                    f'From {name}, Subject: {subject}',
-                    f'Message: {message}\n',
-                    email,  # From email
-                    [settings.EMAIL_HOST_USER],  # To email
-                    fail_silently=False,
-                )
-            return Response({'message': 'Email sent successfully'}, status=status.HTTP_200_OK)
-        else:
-            form = ContactForm()
-        return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
