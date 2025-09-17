@@ -1324,3 +1324,63 @@ def oai(request):
             output = verb_error(request)
 
     return output
+
+
+# Add contact form for shfa
+# Receive contact form submissions
+class ContactFormViewSet(viewsets.ViewSet):
+    def create(self, request):
+        # The method check is redundant since DRF handles this
+        form = ContactForm(request.data)  # Use request.data instead of request.POST
+        
+        if form.is_valid():
+            # Process the form data
+            name = form.cleaned_data['name']
+            email = form.cleaned_data['email']
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            
+            try:
+                # Send an email with better formatting
+                email_subject = f'SHFA Contact Form: {subject}'
+                email_body = f"""
+                    Contact Form Submission
+
+                    From: {name}
+                    Email: {email}
+                    Subject: {subject}
+                    Message:
+                    {message}
+                                    """
+                
+                # Remove the reply_to parameter - it's not supported in older Django versions
+                send_mail(
+                    email_subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,  # From email
+                    [settings.EMAIL_HOST_USER],   # To email
+                    fail_silently=False,
+                )
+                
+                return Response(
+                    {'message': 'Email sent successfully'}, 
+                    status=status.HTTP_201_CREATED
+                )
+
+            except BadHeaderError:
+                return Response(
+                    {'error': 'Failed to send email. Please try again later.'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            except Exception as e:
+                # Add general exception handling
+                return Response(
+                    {'error': f'Failed to send email: {str(e)}'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            # Return form validation errors
+            return Response(
+                {'error': 'Invalid form data', 'details': form.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )

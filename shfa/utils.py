@@ -157,6 +157,6 @@ def build_app_endpoint(name: str):
     return f"api/{name}"
 
 
-def build_contact_form_endpoint(name: str):
+def build_contact_form_endpoint():
 
-    return f"api/{name}/contact/"
+    return f"contact"

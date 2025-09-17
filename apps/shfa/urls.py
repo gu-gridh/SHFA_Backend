@@ -7,7 +7,7 @@ from .manifest import urls as manifest_urls
 
 router = routers.DefaultRouter()
 endpoint = utils.build_app_endpoint("shfa")
-contact_endpoint = utils.build_contact_form_endpoint("shfa")
+contact_endpoint = utils.build_contact_form_endpoint()
 
 documentation = utils.build_app_api_documentation("shfa", endpoint)
 
@@ -71,6 +71,8 @@ router.register(rf'{endpoint}/null_visualization_group',
 # Manifest IIIF endpoints using the ManifestIIIFViewSet in manifest.urls
 path(rf'{endpoint}/iiif/', include('apps.shfa.manifest.urls')),
 
+# url for contact form
+router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),
