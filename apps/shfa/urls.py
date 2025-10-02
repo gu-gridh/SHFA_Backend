@@ -72,7 +72,8 @@ router.register(rf'{endpoint}/null_visualization_group',
 path(rf'{endpoint}/iiif/', include('apps.shfa.manifest.urls')),
 
 # url for contact form
-router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
+# router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
+router.register(r'/contact', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),

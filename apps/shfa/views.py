@@ -278,8 +278,7 @@ class SearchVisualizationGroupViewset(DynamicDepthViewSet):
 
     def get_queryset(self):
         q = self.request.GET.get("site_name", "").strip()
-        
-        # Start with sites that have only 3D models 
+
         queryset = models.Site.objects.filter(
             Q(shfa3d__isnull=False)
         ).distinct()
@@ -298,7 +297,7 @@ class SearchVisualizationGroupViewset(DynamicDepthViewSet):
         # Add annotations for counts
         queryset = queryset.annotate(
             visualization_group_count=Count('shfa3d', distinct=True),
-            images_count=Count('image', distinct=True)
+            images_count=Count('image', filter=Q(image__group__isnull=False), distinct=True)
         )
         
         # Filter to only sites that actually have 3D models or images
@@ -561,6 +560,8 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             "visualization_group": ["group__text"],
             "keyword": ["keywords__text", "keywords__english_translation",
                             "keywords__category", "keywords__category_translation"],
+            "3d_site": ["site__id", "site__raa_id", "site__placename", "site__lamning_id",
+                        "site__askeladden_id", "site__lokalitet_id", "site__ksamsok_id"],
             "rock_carving_object": ["rock_carving_object__name"],
         }
     
@@ -572,7 +573,7 @@ class BaseSearchViewSet(DynamicDepthViewSet):
         return {
             "advanced": ["site_name", "author_name", "dating_tag",
                         "image_type", "institution_name", "region_name",
-                        "visualization_group", "keyword", "rock_carving_object"],
+                        "visualization_group", "keyword", "rock_carving_object", "3d_site"],
             "general": ["q"],
         }, ALL_FIELDS
     
@@ -671,7 +672,17 @@ class BaseSearchViewSet(DynamicDepthViewSet):
         single_q = None
         if grouped_qs:
             single_q = reduce(lambda x, y: x & y, grouped_qs)
-        
+
+        # If 3d_site are present, add image group filter
+        threed_site_present = bool(params.getlist("3d_site"))
+        if threed_site_present:
+            # This filter will be applied to the image queryset
+            group_filter = Q(group__isnull=False) & Q(published=True)
+            if single_q:
+                single_q = single_q & group_filter
+            else:
+                single_q = group_filter
+
         return {
             "chain_filters": chain_filters,
             "single_q": single_q
@@ -720,7 +731,7 @@ class SearchCategoryViewSet(BaseSearchViewSet):
         # Apply search filters using the corrected build_search_query method
         if any(params.get(field) for field in ["site_name", "author_name", "dating_tag", 
                                               "image_type", "institution_name", "region_name", 
-                                              "visualization_group", "keyword", "rock_carving_object", "q"]):
+                                              "visualization_group", "keyword", "rock_carving_object", "3d_site", "q"]):
             search_struct = self.build_search_query(params, search_type, operator)
             
             # Apply chain filters first (each creates separate join)
@@ -841,7 +852,7 @@ class GalleryViewSet(BaseSearchViewSet):
         # Apply search filters
         if any(params.get(field) for field in ["site_name", "author_name", "dating_tag", 
                                               "image_type", "institution_name", "region_name", 
-                                              "visualization_group", "keyword", "rock_carving_object", "q"]):
+                                              "visualization_group", "keyword", "rock_carving_object", "3d_site", "q"]):
             search_struct = self.build_search_query(params, search_type, operator)
             
             # Apply chain filters first (each creates separate join)
@@ -1358,7 +1369,7 @@ class ContactFormViewSet(viewsets.ViewSet):
                     email_subject,
                     email_body,
                     settings.DEFAULT_FROM_EMAIL,  # From email
-                    [settings.EMAIL_HOST_USER],   # To email
+                    [settings.SHFA_EMAIL_HOST_USER],   # To email
                     fail_silently=False,
                 )
                 
