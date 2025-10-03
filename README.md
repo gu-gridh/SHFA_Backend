@@ -1,1 +1,1 @@
-This is a backend reository for shfa backend.
+This is a repository for the SHFA archive backend.
