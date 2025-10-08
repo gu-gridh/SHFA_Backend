@@ -563,6 +563,8 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             "3d_site": ["site__id", "site__raa_id", "site__placename", "site__lamning_id",
                         "site__askeladden_id", "site__lokalitet_id", "site__ksamsok_id"],
             "rock_carving_object": ["rock_carving_object__name"],
+            "year": ["year"],
+            "q": []  # Placeholder for general search across all fields
         }
     
     def get_type_field_keys(self):
