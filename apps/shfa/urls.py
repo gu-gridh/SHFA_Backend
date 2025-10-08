@@ -6,7 +6,7 @@ from .views import oai
 from .manifest import urls as manifest_urls
 
 router = routers.DefaultRouter()
-endpoint = utils.build_app_endpoint()
+endpoint = 'api'
 
 documentation = utils.build_app_api_documentation("", endpoint)
 
