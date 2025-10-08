@@ -152,11 +152,7 @@ def build_app_api_documentation(app_name: str, endpoint: str, template="redoc", 
 
     return [schema, documentation]
 
-def build_app_endpoint(name: str):
-
-    return f"api/{name}"
-
-
-def build_contact_form_endpoint():
-
-    return f"contact"
+def build_app_endpoint(name: str = "") -> str:
+    if name:
+        return f"api/{name}"
+    return "api"

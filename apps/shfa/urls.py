@@ -6,10 +6,9 @@ from .views import oai
 from .manifest import urls as manifest_urls
 
 router = routers.DefaultRouter()
-endpoint = utils.build_app_endpoint("shfa")
-contact_endpoint = utils.build_contact_form_endpoint()
+endpoint = utils.build_app_endpoint()
 
-documentation = utils.build_app_api_documentation("shfa", endpoint)
+documentation = utils.build_app_api_documentation("", endpoint)
 
 router.register(rf'{endpoint}/image', views.IIIFImageViewSet, basename='image')
 router.register(rf'{endpoint}/site', views.SiteViewSet, basename='site')
@@ -72,8 +71,7 @@ router.register(rf'{endpoint}/null_visualization_group',
 path(rf'{endpoint}/iiif/', include('apps.shfa.manifest.urls')),
 
 # url for contact form
-# router.register(rf'{contact_endpoint}', views.ContactFormViewSet, basename='contact')
-router.register(r'/contact', views.ContactFormViewSet, basename='contact')
+router.register(r'contact', views.ContactFormViewSet, basename='contact')
 
 urlpatterns = [
     path('', include(router.urls)),
