@@ -1371,7 +1371,7 @@ class ContactFormViewSet(viewsets.ViewSet):
                     email_subject,
                     email_body,
                     settings.DEFAULT_FROM_EMAIL,  # From email
-                    [settings.EMAIL_HOST_USER],   # To email
+                    [settings.EMAIL_RECEIVER],   # To email
                     fail_silently=False,
                 )
                 
