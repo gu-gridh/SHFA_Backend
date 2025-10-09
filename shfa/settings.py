@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ckeditor',
     'django_better_admin_arrayfield',
     'leaflet',
     'mapwidgets'
