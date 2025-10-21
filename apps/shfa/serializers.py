@@ -235,4 +235,4 @@ class RegionSerializer(DynamicDepthSerializer):
 
     class Meta:
         model = Site
-        fields = ['id', 'name', 'country', 'parish', 'province']
+        fields = ['id', 'placename', 'country', 'parish', 'municipality', 'province', 'sites']

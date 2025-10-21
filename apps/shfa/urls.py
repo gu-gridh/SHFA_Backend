@@ -8,7 +8,7 @@ from .manifest import urls as manifest_urls
 router = routers.DefaultRouter()
 endpoint = 'api'
 
-documentation = utils.build_app_api_documentation("", endpoint)
+documentation = utils.build_app_api_documentation("shfa", endpoint)
 
 router.register(rf'{endpoint}/image', views.IIIFImageViewSet, basename='image')
 router.register(rf'{endpoint}/site', views.SiteViewSet, basename='site')

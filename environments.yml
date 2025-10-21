@@ -36,3 +36,6 @@ dependencies:
     - django_better_admin_arrayfield
     - django-map-widgets
     - iiif_prezi3
+    - inflection
+    - uritemplate
+    - pyyaml
