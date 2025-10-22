@@ -746,7 +746,7 @@ class SearchCategoryViewSet(BaseSearchViewSet):
 
         # Apply bbox filter
         queryset = self.apply_bbox_filter(queryset, params.get("in_bbox"))
-        return queryset.distinct().order_by('-id', 'type__order')
+        return queryset.distinct().order_by('type__order', 'id')
 
 
     def categorize_by_type(self, queryset):
@@ -871,7 +871,7 @@ class GalleryViewSet(BaseSearchViewSet):
             queryset = self.apply_bbox_filter(queryset, bbox_param)
 
         # Return only IDs, ordered for consistent pagination
-        return queryset.distinct('id').order_by('-id', 'type__order')
+        return queryset.distinct('id').order_by('id').values('id')
 
     def list(self, request, *args, **kwargs):
         """Optimized list method with better error handling and memory management."""
@@ -1131,8 +1131,8 @@ class SummaryViewSet(BaseSearchViewSet):
             queryset = queryset.filter(search_struct["single_q"])
 
         queryset = self.apply_bbox_filter(queryset, params.get("in_bbox"))
-        return queryset.distinct().order_by('-id', 'type__order')
-    
+        return queryset.distinct().order_by('type__order', 'id')
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         # Generate summary BEFORE pagination
