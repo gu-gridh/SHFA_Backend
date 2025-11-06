@@ -835,14 +835,14 @@ class GalleryViewSet(BaseSearchViewSet):
     serializer_class = serializers.GallerySerializer
     pagination_class = BoundingBoxPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['id'] + get_fields(models.Image, exclude=['iiif_file', 'file'])
+    filterset_fields = ['id'] + [f for f in get_fields(models.Image, exclude=['iiif_file', 'file']) if f != 'type']
     bbox_filter_field = 'coordinates'
 
     def get_queryset(self):
         params = self.request.GET
         operator = params.get("operator", "OR")
         search_type = params.get("search_type", "advanced")  # Default to advanced
-        category_type = params.get("category_type", "").strip().lower()  # Normalize to lowercase
+        category_type = (params.get("category_type") or params.get("type", "")).strip().lower()
 
         # Start with minimal queryset for performance
         queryset = models.Image.objects.filter(published=True)
