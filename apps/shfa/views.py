@@ -849,7 +849,7 @@ class GalleryViewSet(BaseSearchViewSet):
 
         # Apply category filter - explicitly handle "all" case
         # Only filter by type if category_type is provided AND it's not "all"
-        if category_type and category_type != "all":
+        if category_type and category_type != "=Alla+bilder":
             # Use the actual text value to filter, not the type_id
             queryset = queryset.filter(type__text__iexact=category_type)
         # If category_type is "all" or empty, don't filter by type (show all images)
