@@ -761,15 +761,15 @@ class SearchCategoryViewSet(BaseSearchViewSet):
             queryset
             .values("type__id", "type__text", "type__english_translation")
             .annotate(img_count=Count("id", distinct=True))
-            .order_by("-img_count", "type__order")
+            .order_by("-img_count")
         )
 
         categories = []
         
-        # Add "All" category first
+        # Add "All" category first - use lowercase "all" for consistency
         if total_count > 0:
             categories.append({
-                "type_id": "all",
+                "type_id": "all",  # This should match what's checked in GalleryViewSet
                 "type": "Alla bilder",
                 "type_translation": "All images",
                 "count": total_count,
@@ -842,14 +842,17 @@ class GalleryViewSet(BaseSearchViewSet):
         params = self.request.GET
         operator = params.get("operator", "OR")
         search_type = params.get("search_type", "advanced")  # Default to advanced
-        category_type = params.get("category_type")
+        category_type = params.get("category_type", "").strip().lower()  # Normalize to lowercase
 
         # Start with minimal queryset for performance
         queryset = models.Image.objects.filter(published=True)
 
-        # Apply category filter - handle "All" category
-        if category_type and category_type.lower() != "all":
+        # Apply category filter - explicitly handle "all" case
+        # Only filter by type if category_type is provided AND it's not "all"
+        if category_type and category_type != "all":
+            # Use the actual text value to filter, not the type_id
             queryset = queryset.filter(type__text__iexact=category_type)
+        # If category_type is "all" or empty, don't filter by type (show all images)
 
         # Apply search filters
         if any(params.get(field) for field in ["site_name", "author_name", "dating_tag", 
