@@ -770,8 +770,8 @@ class SearchCategoryViewSet(BaseSearchViewSet):
         if total_count > 0:
             categories.append({
                 "type_id": "all",
-                "type": "All Images",
-                "type_translation": "Alla bilder",
+                "type": "Alla bilder",
+                "type_translation": "All images",
                 "count": total_count,
             })
 
