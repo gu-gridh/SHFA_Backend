@@ -842,14 +842,14 @@ class GalleryViewSet(BaseSearchViewSet):
         params = self.request.GET
         operator = params.get("operator", "OR")
         search_type = params.get("search_type", "advanced")  # Default to advanced
-        category_type = (params.get("category_type") or params.get("type", "")).strip().lower()
+        category_type = params.get("category_type", "").strip().lower()  # Normalize to lowercase
 
         # Start with minimal queryset for performance
         queryset = models.Image.objects.filter(published=True)
 
         # Apply category filter - explicitly handle "all" case
         # Only filter by type if category_type is provided AND it's not "all"
-        if category_type and category_type != "=Alla+bilder":
+        if category_type and category_type != "all":
             # Use the actual text value to filter, not the type_id
             queryset = queryset.filter(type__text__iexact=category_type)
         # If category_type is "all" or empty, don't filter by type (show all images)
