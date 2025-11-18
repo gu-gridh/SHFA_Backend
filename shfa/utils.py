@@ -138,17 +138,17 @@ def build_app_api_documentation(app_name: str, endpoint: str, template="redoc", 
             title=f"{app_name.capitalize()}",
             description=f"Schema for the {app_name.capitalize()} API at the Centre for Digital Humanities",
             version="1.0.0",
-            urlconf=f"apps.{app_name}.urls"
+            urlconf=f"apps.{app_name}.urls" if app_name else None
         ), 
-        name=f'{app_name}-openapi-schema'
+        name=f'{app_name}-openapi-schema' if app_name else 'openapi-schema'
     )
 
     documentation = path(f'{endpoint}/documentation/', 
         TemplateView.as_view(
-            template_name='templates/redoc.html',
-            extra_context={'schema_url': f'{app_name}-openapi-schema'},
+            template_name='redoc.html',
+            extra_context={'schema_url': f'{app_name}-openapi-schema' if app_name else 'openapi-schema'},
         ), 
-        name=f'{app_name}-documentation')
+        name=f'{app_name}-documentation' if app_name else 'documentation')
 
     return [schema, documentation]
 
