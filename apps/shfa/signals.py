@@ -13,13 +13,9 @@ def delete_old_resumption_tokens(sender, **kwargs):
 
 @receiver(post_save, sender=Image)
 def update_image_dimensions(sender, instance, created, **kwargs):
-    # Prevent recursion: don't run if we're already updating dimensions
-    if kwargs.get('update_fields') and 'width' in kwargs.get('update_fields'):
-        return
-    
     # Only fetch if width or height is missing and iiif_file exists
     if (instance.width is None or instance.height is None) and instance.iiif_file:
-        base_url = "https://img.dh.gu.se/diana/static/"
+        base_url = "https://img.dh.gu.se/shfa/static/"
         iiif_file_url = getattr(instance.iiif_file, 'url', None)
         if not iiif_file_url:
             return
@@ -34,8 +30,9 @@ def update_image_dimensions(sender, instance, created, **kwargs):
                 height = info.get("height")
                 # Only update if values are present
                 if width and height:
-                    # Use update() to bypass signals and avoid recursion
-                    Image.objects.filter(pk=instance.pk).update(width=width, height=height)
+                    instance.width = width
+                    instance.height = height
+                    instance.save(update_fields=["width", "height"])
         except Exception as e:
             # Optionally log the error
             print(f"Could not fetch IIIF info for image {instance.id}: {e}")
