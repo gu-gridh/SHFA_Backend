@@ -179,10 +179,17 @@ class AbstractTIFFImageModel(AbstractImageModel):
     iiif_file = models.ImageField(max_length=256, storage=IIIFFileStorage, upload_to=get_iiif_path, blank=True, null=True, verbose_name=_("abstract.iiif_file"))
 
     def save(self, **kwargs) -> None:
+        # Optimization: Only generate TIFF if 'file' is being updated or it's a new instance
+        # This prevents regenerating the TIFF when only metadata (like ManyToMany fields) changes
+        update_fields = kwargs.get('update_fields')
+        if not self.pk or update_fields is None or 'file' in update_fields:
+            try:
+                save_tiled_pyramid_tif(self)
+            except Exception as e:
+                # Log error but don't stop the save
+                print(f"TIFF Generation Warning: {e}")
 
-        # self._save_tiled_pyramid_tif()
-        save_tiled_pyramid_tif(self)
-
+        # Continue with standard save
         super().save(**kwargs)
 
 

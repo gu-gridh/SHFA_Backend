@@ -115,7 +115,7 @@ class ImageModel(admin.ModelAdmin):
         KeywordFilter,
         'file'
     ]
-    filter_horizontal = ['people', 'keywords', 'dating_tags']
+    filter_horizontal = ['keywords', 'dating_tags', 'people']
     list_per_page = 25
 
     def image_preview(self, obj):

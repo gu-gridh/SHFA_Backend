@@ -14,6 +14,10 @@ def delete_old_resumption_tokens(sender, **kwargs):
 @receiver(post_save, sender=Image)
 def update_image_dimensions(sender, instance, created, **kwargs):
     # Only fetch if width or height is missing and iiif_file exists
+    # And specifically prevent running this if we are just updating width/height
+    if kwargs.get('update_fields') and 'width' in kwargs.get('update_fields'):
+        return
+
     if (instance.width is None or instance.height is None) and instance.iiif_file:
         base_url = "https://img.dh.gu.se/shfa/static/"
         iiif_file_url = getattr(instance.iiif_file, 'url', None)
@@ -30,9 +34,8 @@ def update_image_dimensions(sender, instance, created, **kwargs):
                 height = info.get("height")
                 # Only update if values are present
                 if width and height:
-                    instance.width = width
-                    instance.height = height
-                    instance.save(update_fields=["width", "height"])
+                     # Use .update() to bypass signals/save() overrides - Fixes server 302 issue
+                    Image.objects.filter(pk=instance.pk).update(width=width, height=height)
         except Exception as e:
             # Optionally log the error
             print(f"Could not fetch IIIF info for image {instance.id}: {e}")
