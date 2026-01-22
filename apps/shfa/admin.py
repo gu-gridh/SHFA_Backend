@@ -98,7 +98,7 @@ class ImageModel(admin.ModelAdmin):
     readonly_fields = ['legacy_id', 'iiif_file',
                        'uuid', 'image_preview', *DEFAULT_FIELDS]
     autocomplete_fields = ['site', 'collection', 'institution',
-                           'type', 'rock_carving_object', 'subtype']
+                           'type', 'rock_carving_object', 'subtype', 'people']
     list_display = ['thumbnail_preview', 'site', 'rock_carving_object',
                     'year', 'collection', 'institution', 'type', 'subtype', 'file']
     search_fields = ['site__lamning_id', 'site__raa_id', 'rock_carving_object__name',
@@ -115,7 +115,9 @@ class ImageModel(admin.ModelAdmin):
         KeywordFilter,
         'file'
     ]
-    filter_horizontal = ['keywords', 'dating_tags', 'people']
+    # Removed 'people' from filter_horizontal to use autocomplete_fields instead
+    # This avoids issues with large datasets and SelectFilter2.js
+    filter_horizontal = ['keywords', 'dating_tags']
     list_per_page = 25
 
     def image_preview(self, obj):
