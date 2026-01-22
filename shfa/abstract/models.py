@@ -180,9 +180,16 @@ class AbstractTIFFImageModel(AbstractImageModel):
 
     def save(self, **kwargs) -> None:
         # Optimization: Only generate TIFF if 'file' is being updated or it's a new instance
-        # This prevents regenerating the TIFF when only metadata (like ManyToMany fields) changes
+        # Skip if update_fields is explicitly empty (M2M-only changes)
         update_fields = kwargs.get('update_fields')
-        if not self.pk or update_fields is None or 'file' in update_fields:
+        
+        should_generate_tiff = (
+            not self.pk or  # New instance
+            (update_fields is None) or  # No update_fields specified (full save)
+            (update_fields and 'file' in update_fields)  # File field explicitly updated
+        )
+        
+        if should_generate_tiff:
             try:
                 save_tiled_pyramid_tif(self)
             except Exception as e:
