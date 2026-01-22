@@ -178,26 +178,26 @@ class AbstractTIFFImageModel(AbstractImageModel):
     # The path to the IIIF file
     iiif_file = models.ImageField(max_length=256, storage=IIIFFileStorage, upload_to=get_iiif_path, blank=True, null=True, verbose_name=_("abstract.iiif_file"))
 
-    def save(self, **kwargs) -> None:
-        # Optimization: Only generate TIFF if 'file' is being updated or it's a new instance
-        # Skip if update_fields is explicitly empty (M2M-only changes)
-        update_fields = kwargs.get('update_fields')
+    # def save(self, **kwargs) -> None:
+    #     # Optimization: Only generate TIFF if 'file' is being updated or it's a new instance
+    #     # Skip if update_fields is explicitly empty (M2M-only changes)
+    #     update_fields = kwargs.get('update_fields')
         
-        should_generate_tiff = (
-            not self.pk or  # New instance
-            (update_fields is None) or  # No update_fields specified (full save)
-            (update_fields and 'file' in update_fields)  # File field explicitly updated
-        )
+    #     should_generate_tiff = (
+    #         not self.pk or  # New instance
+    #         (update_fields is None) or  # No update_fields specified (full save)
+    #         (update_fields and 'file' in update_fields)  # File field explicitly updated
+    #     )
         
-        if should_generate_tiff:
-            try:
-                save_tiled_pyramid_tif(self)
-            except Exception as e:
-                # Log error but don't stop the save
-                print(f"TIFF Generation Warning: {e}")
+    #     if should_generate_tiff:
+    #         try:
+    #             save_tiled_pyramid_tif(self)
+    #         except Exception as e:
+    #             # Log error but don't stop the save
+    #             print(f"TIFF Generation Warning: {e}")
 
-        # Continue with standard save
-        super().save(**kwargs)
+    #     # Continue with standard save
+    #     super().save(**kwargs)
 
 
 
