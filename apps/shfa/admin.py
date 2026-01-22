@@ -143,17 +143,6 @@ class SiteAdmin(admin.ModelAdmin):
             "widget": mapwidgets.LeafletPointFieldWidget(settings=MAP_WIDGETS)}
     }
 
-    # filter_horizontal = ['raa_id', 'lamning_id', 'askeladden_id', 'lokalitet_id','placename']
-    # def get_search_results(self, request, queryset, search_term):
-    #     queryset, use_distinct = super().get_search_results(request, queryset, search_term)
-    #     try:
-    #         queryset = Site.objects.filter(raa_id__exact=search_term)
-    #     except ValueError:
-    #         pass
-    #     else:
-    #         queryset |= Site.objects.filter(raa_id__icontains=search_term)
-    #     return queryset, use_distinct
-
     @admin.display(description=_('Read at Fornsök'))
     def get_ksamsok_link(self, obj):
 
