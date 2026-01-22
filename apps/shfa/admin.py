@@ -117,6 +117,7 @@ class ImageModel(admin.ModelAdmin):
     ]
     filter_horizontal = ['people', 'keywords', 'dating_tags']
 
+
     def image_preview(self, obj):
         if 'tif' in obj.file.path:
             return format_html(f'<img src="{settings.IIIF_URL}{obj.iiif_file}/full/full/0/default.jpg" height="300" />')
