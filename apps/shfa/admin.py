@@ -129,12 +129,6 @@ class ImageModel(admin.ModelAdmin):
         else:
             return format_html(f'<img src="{settings.ORIGINAL_URL}/{obj.file}" height="100" />')
 
-    # image_preview.short_description = 'Image preview'
-    # image_preview.allow_tags = True
-    # thumbnail_preview.short_description = 'Image thumbnail'
-    # thumbnail_preview.allow_tags = True
-
-
 @admin.register(Site)
 class SiteAdmin(admin.ModelAdmin):
     fields = get_fields(Site, exclude=DEFAULT_EXCLUDE+["id"])
