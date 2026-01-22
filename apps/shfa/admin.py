@@ -117,6 +117,26 @@ class ImageModel(admin.ModelAdmin):
     ]
     filter_horizontal = ['people', 'keywords', 'dating_tags']
 
+    def save_model(self, request, obj, form, change):
+        """Override to debug M2M save issues - logs to error.log"""
+        import logging
+        logger = logging.getLogger('django')
+        logger.error(f"[IMAGE SAVE] save_model: Image {obj.id if obj.id else 'NEW'}, changed: {form.changed_data}")
+        if 'people' in form.cleaned_data:
+            logger.error(f"[IMAGE SAVE] People in form: {[p.id for p in form.cleaned_data['people']]}")
+        super().save_model(request, obj, form, change)
+    
+    def save_related(self, request, form, formsets, change):
+        """Override to debug M2M saves - logs to error.log"""
+        import logging
+        logger = logging.getLogger('django')
+        logger.error(f"[IMAGE SAVE] save_related START: Image {form.instance.id}")
+        if 'people' in form.cleaned_data:
+            logger.error(f"[IMAGE SAVE] People to save: {[p.id for p in form.cleaned_data['people']]}")
+            logger.error(f"[IMAGE SAVE] People BEFORE: {form.instance.people.count()}")
+        super().save_related(request, form, formsets, change)
+        if 'people' in form.cleaned_data:
+            logger.error(f"[IMAGE SAVE] People AFTER: {form.instance.people.count()}, IDs: {[p.id for p in form.instance.people.all()]}")
 
     def image_preview(self, obj):
         if 'tif' in obj.file.path:
