@@ -92,7 +92,7 @@ class DatingTagAdmin(admin.ModelAdmin):
 
 
 @admin.register(Image)
-class ImageModel(admin.ModelAdmin):
+class ImageAdmin(admin.ModelAdmin):
 
     fields = ['image_preview', *get_fields(Image, exclude=['id'])]
     readonly_fields = ['legacy_id', 'iiif_file',
