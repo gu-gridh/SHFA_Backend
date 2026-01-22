@@ -1,6 +1,7 @@
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save, post_save, m2m_changed
 from django.dispatch import receiver
 from django.utils import timezone
+from django.db import transaction
 from .models import ResumptionToken, Image
 import requests
 
@@ -16,6 +17,10 @@ def update_image_dimensions(sender, instance, created, **kwargs):
     # Only fetch if width or height is missing and iiif_file exists
     # And specifically prevent running this if we are just updating width/height
     if kwargs.get('update_fields') and 'width' in kwargs.get('update_fields'):
+        return
+    
+    # Don't run during database operations that might conflict with M2M saves
+    if kwargs.get('raw', False):
         return
 
     if (instance.width is None or instance.height is None) and instance.iiif_file:
@@ -34,8 +39,12 @@ def update_image_dimensions(sender, instance, created, **kwargs):
                 height = info.get("height")
                 # Only update if values are present
                 if width and height:
-                     # Use .update() to bypass signals/save() overrides - Fixes server 302 issue
-                    Image.objects.filter(pk=instance.pk).update(width=width, height=height)
+                    # Schedule this to run after the current transaction commits
+                    # This ensures M2M fields are saved first
+                    def update_dimensions():
+                        Image.objects.filter(pk=instance.pk).update(width=width, height=height)
+                    
+                    transaction.on_commit(update_dimensions)
         except Exception as e:
             # Optionally log the error
             print(f"Could not fetch IIIF info for image {instance.id}: {e}")
