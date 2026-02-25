@@ -12,7 +12,7 @@
     <serviceOrganization>{{"shfa"}}</serviceOrganization>
     <serviceName>{{"shfabild"}}</serviceName>
     <url>https://shfa.dh.gu.se/search/iiif/{{data.uuid}}.tif/meta/{{data.id}}</url>
-    <thumbnail>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</thumbnail>
+    <thumbnail>{{"https://data.dh.gu.se/shfa/static/"}}{{data.file}}</thumbnail>
     <mediaType>{{"image/jpeg"}}</mediaType>
     <dataQuality rdf:resource="{{"http://kulturarvsdata.se/resurser/DataQuality#raw"}}" />
     <itemType rdf:resource="{{"http://kulturarvsdata.se/resurser/EntityType#photo"}}" />
@@ -49,9 +49,9 @@
               </gml:Point>
             </georss:where>
         <pres:image>
-          <pres:src type="thumbnail">{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</pres:src>
-          <pres:src type="lowres">{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</pres:src>
-          <pres:src type="highres">{{"https://img.dh.gu.se/diana/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</pres:src>
+          <pres:src type="thumbnail">{{"https://data.dh.gu.se/shfa/static/"}}{{data.file}}</pres:src>
+          <pres:src type="lowres">{{"https://data.dh.gu.se/shfa/static/"}}{{data.file}}</pres:src>
+          <pres:src type="highres">{{"https://img.dh.gu.se/shfa/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</pres:src>
           <pres:byline>{{data.author.name}}</pres:byline>
           <pres:copyright>{{"SHFA"}}</pres:copyright>
           <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
@@ -91,9 +91,9 @@
 </Context>
   <Image rdf:nodeID="im001">
     <mediaType>image/jpeg</mediaType>
-    <thumbnailSource>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</thumbnailSource>
-    <lowresSource>{{"https://data.dh.gu.se/diana/static/"}}{{data.file}}</lowresSource>
-    <highresSource>{{"https://img.dh.gu.se/diana/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</highresSource>
+    <thumbnailSource>{{"https://data.dh.gu.se/shfa/static/"}}{{data.file}}</thumbnailSource>
+    <lowresSource>{{"https://data.dh.gu.se/shfa/static/"}}{{data.file}}</lowresSource>
+    <highresSource>{{"https://img.dh.gu.se/shfa/static/"}}{{data.iiif_file}}/full/full/0/default.jpg</highresSource>
     <byline>{{data.author.name}}</byline>
     <mediaMotiveWord>{% get_image_tags data %}</mediaMotiveWord>
     <copyright>SHFA</copyright>

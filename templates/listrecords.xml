@@ -30,7 +30,7 @@
                         <serviceName>{{"shfabild"}}</serviceName>
                         <url>https://shfa.dh.gu.se/image/{{image.id}}</url>
                         <dcterms:replaces rdf:resource="http://kulturarvsdata.se/shfa/bild/{{image.legacy_id}}"/>
-                        <thumbnail>{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</thumbnail>
+                        <thumbnail>{{"https://data.dh.gu.se/shfa/static/"}}{{image.file}}</thumbnail>
                         <mediaType>{{"image/jpeg"}}</mediaType>
                         <dataQuality rdf:resource="{{"http://kulturarvsdata.se/resurser/DataQuality#raw"}}" />
                         <itemType rdf:resource="{{"http://kulturarvsdata.se/resurser/EntityType#photo"}}" />
@@ -79,9 +79,9 @@
                                 {% endif %}
                             </georss:where>
                             <pres:image>
-                            <pres:src type="thumbnail">{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</pres:src>
-                            <pres:src type="lowres">{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</pres:src>
-                            <pres:src type="highres">{{"https://img.dh.gu.se/diana/static/"}}{{image.iiif_file}}/full/full/0/default.jpg</pres:src>
+                            <pres:src type="thumbnail">{{"https://data.dh.gu.se/shfa/static/"}}{{image.file}}</pres:src>
+                            <pres:src type="lowres">{{"https://data.dh.gu.se/shfa/static/"}}{{image.file}}</pres:src>
+                            <pres:src type="highres">{{"https://img.dh.gu.se/shfa/static/"}}{{image.iiif_file}}/full/full/0/default.jpg</pres:src>
                             <pres:byline>{{image.author.name}}</pres:byline>
                             <pres:copyright>{{"SHFA"}}</pres:copyright>
                             <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
@@ -130,9 +130,9 @@
                     </Context>
                     <Image rdf:nodeID="im001">
                         <mediaType>image/jpeg</mediaType>
-                        <thumbnailSource>{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</thumbnailSource>
-                        <lowresSource>{{"https://data.dh.gu.se/diana/static/"}}{{image.file}}</lowresSource>
-                        <highresSource>{{"https://img.dh.gu.se/diana/static/"}}{{image.iiif_file}}/full/full/0/default.jpg</highresSource>
+                        <thumbnailSource>{{"https://data.dh.gu.se/shfa/static/"}}{{image.file}}</thumbnailSource>
+                        <lowresSource>{{"https://data.dh.gu.se/shfa/static/"}}{{image.file}}</lowresSource>
+                        <highresSource>{{"https://img.dh.gu.se/shfa/static/"}}{{image.iiif_file}}/full/full/0/default.jpg</highresSource>
                         <byline>{{image.author.name}}</byline>
                         <mediaMotiveWord>{% get_image_tags image %}</mediaMotiveWord>
                         <copyright>SHFA</copyright>
