@@ -621,7 +621,7 @@ class BaseSearchViewSet(DynamicDepthViewSet):
                         for part in region_parts:
                             part_or_conditions = []
                             for field in fields:
-                                part_or_conditions.append(Q(**{f"{field}__iexact": part}))
+                                part_or_conditions.append(Q(**{f"{field}__icontains": part}))
                             
                             if part_or_conditions:
                                 group_and_conditions.append(
@@ -658,7 +658,7 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             for val in values:
                 cluster = Q()
                 for f in fields:
-                    cluster |= Q(**{f"{f}__iexact": val})
+                    cluster |= Q(**{f"{f}__icontains": val})
                 per_value_clusters.append(cluster)
 
             if field_operator == "AND" and param_key in operator_controlled_fields:
