@@ -491,9 +491,22 @@ class AdvancedSearch(DynamicDepthViewSet):
 class BaseSearchViewSet(DynamicDepthViewSet):
     """Base class containing common search functionality."""
 
+    def get_lookup_type(self, search_type):
+        """Return the appropriate Django ORM lookup based on search strategy.
+
+        - General search ('general'): uses 'icontains' for substring matching,
+          allowing free-text queries to find partial matches.
+        - Advanced search ('advanced'): uses 'iexact' for case-insensitive exact
+          matching, since values come from autocomplete selections.
+        """
+        if search_type == "general":
+            return "icontains"
+        return "iexact"
+
     def parse_multi_values(self, values):
         """Helper method to parse multiple values from query parameters.
         
+        Used for GENERAL search where free-form text may contain delimiters.
         Supports three formats:
         1. Multiple parameters: ?param=val1&param=val2
         2. Ampersand separated: ?param=val1%26val2  
@@ -513,6 +526,37 @@ class BaseSearchViewSet(DynamicDepthViewSet):
                     # Single value
                     parsed_values.append(value.strip())
         return parsed_values
+
+    def parse_exact_values(self, raw_values):
+        """Parse values for exact matching (advanced search).
+
+        Unlike parse_multi_values, this does NOT split by comma or ampersand,
+        because field values (like author names "Hallström, Gustaf") may
+        legitimately contain commas.
+
+        Supports two ways to pass multiple values:
+
+        1. Separate query parameters (Django getlist):
+            ?author_name=Hallström, Gustaf&author_name=Smith, John
+
+        2. Pipe-delimited within a single parameter:
+            ?author_name=Hallström, Gustaf|Smith, John
+
+        The pipe character '|' is used as the delimiter because it does not
+        appear in natural-language field values (names, keywords, etc.).
+        """
+        parsed = []
+        for v in raw_values:
+            if not v:
+                continue
+            # Split by semicolon to support multiple values in one parameter
+            if ';' in v:
+                parsed.extend(part.strip() for part in v.split(';') if part.strip())
+            else:
+                stripped = v.strip()
+                if stripped:
+                    parsed.append(stripped)
+        return parsed
 
     def parse_region_groups(self, region_values):
         """
@@ -583,6 +627,15 @@ class BaseSearchViewSet(DynamicDepthViewSet):
         """
         Build search structure that supports AND operators with separate joins.
         Special handling for region_name with multiple parameter groups.
+
+        Lookup strategy:
+        - General search  → icontains (substring matching for free-text).
+        - Advanced search → iexact   (exact matching for autocomplete values).
+
+        Value parsing strategy:
+        - General search  → parse_multi_values (splits by comma / ampersand).
+        - Advanced search → parse_exact_values  (each query-param is one value;
+          no splitting, so names like "Hallström, Gustaf" stay intact).
         
         Returns dict with:
         - chain_filters: list of Q objects applied sequentially (for AND operations)  
@@ -591,6 +644,8 @@ class BaseSearchViewSet(DynamicDepthViewSet):
         TYPE_FIELD_KEYS, ALL_FIELDS = self.get_type_field_keys()
         field_keys = TYPE_FIELD_KEYS.get(search_type, list(ALL_FIELDS.keys()))
         mapping_filter_fields = {key: ALL_FIELDS[key] for key in field_keys}
+
+        lookup = self.get_lookup_type(search_type)
 
         operator_controlled_fields = ["author_name", "keyword", "dating_tag"]
         field_operator_mapping = {
@@ -621,7 +676,7 @@ class BaseSearchViewSet(DynamicDepthViewSet):
                         for part in region_parts:
                             part_or_conditions = []
                             for field in fields:
-                                part_or_conditions.append(Q(**{f"{field}__icontains": part}))
+                                part_or_conditions.append(Q(**{f"{field}__{lookup}": part}))
                             
                             if part_or_conditions:
                                 group_and_conditions.append(
@@ -640,8 +695,14 @@ class BaseSearchViewSet(DynamicDepthViewSet):
                 
                 continue  # Skip normal processing for region_name
 
-            # Normal processing for other fields
-            values = self.parse_multi_values(raw_values)
+            # Choose parser based on search type:
+            # - general: split by comma/ampersand (free-text input)
+            # - advanced: keep each raw param as one complete value (autocomplete)
+            if search_type == "general":
+                values = self.parse_multi_values(raw_values)
+            else:
+                values = self.parse_exact_values(raw_values)
+
             if not values:
                 continue
 
@@ -653,12 +714,12 @@ class BaseSearchViewSet(DynamicDepthViewSet):
             else:
                 field_operator = "OR"
 
-            # Build OR cluster per value
+            # Build OR cluster per value using the appropriate lookup
             per_value_clusters = []
             for val in values:
                 cluster = Q()
                 for f in fields:
-                    cluster |= Q(**{f"{f}__icontains": val})
+                    cluster |= Q(**{f"{f}__{lookup}": val})
                 per_value_clusters.append(cluster)
 
             if field_operator == "AND" and param_key in operator_controlled_fields:
