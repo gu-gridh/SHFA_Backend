@@ -1,0 +1,17 @@
+# This CITATION.cff file was generated with Zotero.
+
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+title:  >-
+  gu-gridh/SHFA_Backend
+abstract: This repository provides code for the SHFA Backend.
+type: software
+version: 1.0
+url: https://github.com/gu-gridh/SHFA_Backend
+authors: 
+  - family-names: Karimi
+    given-names: Aram
+  - family-names: Green
+    given-names: Ashely
+date-released: 2026-03-03
