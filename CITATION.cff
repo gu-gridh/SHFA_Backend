@@ -2,10 +2,10 @@
 
 cff-version: 1.2.0
 message: >-
-  If you use this software, please cite it using the metadata from this file.
+  If you use this software, please cite it using the metadata from this file. The SHFA archive should be cited separately.
 title:  >-
   gu-gridh/SHFA_Backend
-abstract: This repository provides code for the SHFA Backend.
+abstract: This repository provides code for the SHFA archive Backend.
 type: software
 version: 1.0
 url: https://github.com/gu-gridh/SHFA_Backend
@@ -14,4 +14,4 @@ authors:
     given-names: Aram
   - family-names: Green
     given-names: Ashely
-date-released: 2026-03-03
+date-released: 2026
