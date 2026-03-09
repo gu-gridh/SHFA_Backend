@@ -79,14 +79,14 @@
                                 {% endif %}
                             </georss:where>
                             {% if model_3d.three_d_mesh and model_3d.three_d_mesh.mesh_url %}
-                            <pres:3dModel>
+                            <pres:model3d>
                             <pres:src type="mesh">{{model_3d.three_d_mesh.mesh_url}}</pres:src>
                             {% if model_3d.three_d_mesh.quality_url %}
                             <pres:src type="quality">{{model_3d.three_d_mesh.quality_url}}</pres:src>
                             {% endif %}
                             <pres:copyright>{{"SHFA"}}</pres:copyright>
                             <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
-                            </pres:3dModel>
+                            </pres:model3d>
                             {% endif %}
                             <pres:representations>
                             <pres:representation format="HTML">http://kulturarvsdata.se/shfa/3d/html/{{model_3d.id}}</pres:representation>
