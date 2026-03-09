@@ -1,0 +1,127 @@
+{% load oai_pmh %}
+{% block content %}
+<rdf:RDF xmlns="http://kulturarvsdata.se/ksamsok#" xmlns:foaf="http://xmlns.com/foaf/0.1/#"
+		xmlns:geoF="http://www.mindswap.org/2003/owl/geo/geoFeatures20040307.owl#"
+		xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:time="http://www.w3.org/2006/time#">
+  <Entity rdf:about="http://kulturarvsdata.se/{{"shfa"}}/{{"3d"}}/{{data.id}}">
+    <ksamsokVersion>0.99</ksamsokVersion>
+    <buildDate>{% now "Y-m-d" %}</buildDate>
+    <createdDate>{{data.created_at|date:"Y-m-d"}}</createdDate>
+    <lastChangedDate>{{data.updated_at|date:"Y-m-d"}}</lastChangedDate>
+    <serviceOrganization>{{"shfa"}}</serviceOrganization>
+    <serviceName>{{"shfa3d"}}</serviceName>
+    <url>https://shfa.dh.gu.se/3d/{{data.id}}</url>
+    {% if data.three_d_mesh and data.three_d_mesh.mesh_url %}
+    <mediaType>{{"model/gltf+json"}}</mediaType>
+    {% endif %}
+    <dataQuality rdf:resource="{{"http://kulturarvsdata.se/resurser/DataQuality#raw"}}" />
+    <itemType rdf:resource="{{"http://kulturarvsdata.se/resurser/EntityType#3dmodel"}}" />
+    <itemTitle>{{data.site.raa_id}}</itemTitle>
+    <itemLicense rdf:resource="http://kulturarvsdata.se/resurser/License#CC-BY"/>
+    <itemLicenseUrl rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
+    <itemName rdf:nodeID="name001" />
+    <itemLabel>{% get_3d_title data %}</itemLabel>
+    <itemMotiveWord>{% get_3d_tags data %}</itemMotiveWord>
+    {% if data.three_d_mesh and data.three_d_mesh.method %}
+    <itemTechnique>{{data.three_d_mesh.method.text}}</itemTechnique>
+    {% endif %}
+    <itemNumber rdf:nodeID="num001"/>
+    <context rdf:nodeID="ctx001" />
+    <visualizes>http://kulturarvsdata.se/raa/lamning/{{data.site.ksamsok_id}}</visualizes>
+    {% if data.three_d_mesh and data.three_d_mesh.mesh_url %}
+    <mesh rdf:nodeID="mesh001" />
+    {% endif %}
+    <presentation rdf:parseType="Literal" xmlns:pres="http://kulturarvsdata.se/presentation#">
+      <pres:item>
+        <pres:version>0.99</pres:version>
+        <pres:entityUri>https://shfa.dh.gu.se/3d/{{data.id}}</pres:entityUri>
+        {% if data.three_d_mesh and data.three_d_mesh.method %}
+        <pres:type>{{data.three_d_mesh.method.text}}</pres:type>
+        {% endif %}
+        <pres:id>{{data.id}}</pres:id>
+        <pres:idLabel>{{data.site.lamning_id}}</pres:idLabel>
+        <pres:itemLabel>{% get_3d_title data %}</pres:itemLabel>
+        <pres:description>{% get_3d_creators data %}, Institution: {{data.institution.name}}{% if data.date %}, Date: {{data.date|date:"Y-m-d"}}{% endif %}</pres:description>
+        <pres:context>
+          <pres:event>-</pres:event>
+          <pres:placeLabel>Län:{{data.site.province}}, Kommun:{{data.site.municipality}}, Socken:{{data.site.parish}}</pres:placeLabel>
+          <pres:timeLabel>-</pres:timeLabel>
+          <pres:nameLabel>-</pres:nameLabel>
+        </pres:context>
+        <georss:where xmlns:georss="http://www.georss.org/georss">
+          <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
+            <gml:coordinates cs="," decimal="." ts=" ">
+            {% for s in data.site.coordinates %}{% if not forloop.first %}{% if forloop.last %}, {% else %}, {% endif %}{% endif %}{{s}}{% endfor %}</gml:coordinates> 
+              </gml:Point>
+            </georss:where>
+        {% if data.three_d_mesh and data.three_d_mesh.mesh_url %}
+        <pres:3dModel>
+          <pres:src type="mesh">{{data.three_d_mesh.mesh_url}}</pres:src>
+          {% if data.three_d_mesh.quality_url %}
+          <pres:src type="quality">{{data.three_d_mesh.quality_url}}</pres:src>
+          {% endif %}
+          <pres:copyright>{{"SHFA"}}</pres:copyright>
+          <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
+        </pres:3dModel>
+        {% endif %}
+        <pres:representations>
+          <pres:representation format="HTML">http://kulturarvsdata.se/shfa/3d/html/{{data.id}}</pres:representation>
+          <pres:representation format="XML">http://kulturarvsdata.se/shfa/3d/xml/{{data.id}}</pres:representation>
+          <pres:representation format="RDF">http://kulturarvsdata.se/shfa/3d/rdf/{{data.id}}</pres:representation>
+        </pres:representations>
+        <pres:organization>Svenskt HällristningsForskningsarkiv</pres:organization>
+        <pres:organizationShort>SHFA</pres:organizationShort>
+        <pres:service>3d</pres:service>
+        <pres:dataQuality>Rådata</pres:dataQuality>
+        <pres:buildDate>{% now "Y-m-d" %}</pres:buildDate>
+      </pres:item>
+    </presentation>
+  </Entity>
+<Context rdf:nodeID="ctx001">
+        <contextType rdf:resource="http://kulturarvsdata.se/resurser/ContextType#exist"/>
+        <contextLabel>Plats</contextLabel> 
+        <continentName>Europa</continentName> 
+        <country rdf:resource="http://kulturarvsdata.se/resurser/aukt/geo/country#se"/> 
+        <countryName>Sverige</countryName>
+        <countyName>{{data.site.province}}</countyName>
+        <provinceName>{{data.site.province}}</provinceName> 
+        <municipalityName>{{data.site.municipality}}</municipalityName> 
+        <parishName>{{data.site.parish}}</parishName> 
+        <coordinates rdf:parseType="Literal">
+            <gml:Point xmlns:gml="http://www.opengis.net/gml" srsName="SDO:4326">
+            <gml:coordinates cs="," decimal="." ts=" "> {% for s in data.site.coordinates %}{% if not forloop.first %}{% if forloop.last %}, {% else %}, {% endif %}{% endif %}{{s}}{% endfor %}</gml:coordinates>
+        </gml:Point>
+    </coordinates>
+</Context>
+  {% if data.three_d_mesh and data.three_d_mesh.mesh_url %}
+  <Mesh rdf:nodeID="mesh001">
+    <mediaType>model/gltf+json</mediaType>
+    <meshSource>{{data.three_d_mesh.mesh_url}}</meshSource>
+    {% if data.three_d_mesh.quality_url %}
+    <qualitySource>{{data.three_d_mesh.quality_url}}</qualitySource>
+    {% endif %}
+    {% if data.three_d_mesh.method %}
+    <method>{{data.three_d_mesh.method.text}}</method>
+    {% endif %}
+    <numVertices>{{data.three_d_mesh.num_vertices}}</numVertices>
+    <numFaces>{{data.three_d_mesh.num_faces}}</numFaces>
+    {% if data.three_d_mesh.num_photos %}
+    <numPhotos>{{data.three_d_mesh.num_photos}}</numPhotos>
+    {% endif %}
+    <mediaMotiveWord>{% get_3d_tags data %}</mediaMotiveWord>
+    <copyright>SHFA</copyright>
+    <mediaLicense rdf:resource="http://kulturarvsdata.se/resurser/License#by-nc-nd"/>
+    <mediaLicenseUrl rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
+  </Mesh>
+  {% endif %}
+  <ItemNumber rdf:nodeID="num001">
+    <type>RAÄ-nummer</type>
+    <number>{{data.site.raa_id}}</number>
+  </ItemNumber>
+  <ItemName rdf:nodeID="name001">
+    <type>{% get_3d_tags data %}</type>
+    <name>hällristning</name>
+  </ItemName>
+</rdf:RDF>
+{% endblock %}

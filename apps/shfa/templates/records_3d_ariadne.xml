@@ -1,0 +1,108 @@
+{% extends "base.xml" %}
+{% load oai_pmh %}
+{% load tz %}
+{% block content %}
+
+<ListRecords>
+{% if data.site.coordinates %}
+    <record>
+        <header>
+            <identifier>oai:shfa.dh.gu.se:3d/{{ data.id }}</identifier>
+            <datestamp>{% now "Y-m-d\\TH:i:s\\Z" %}</datestamp>
+            <setSpec>shfa:3d</setSpec>
+        </header>
+
+        <metadata>
+            <rdf:RDF
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+                xmlns:rdf4j="http://rdf4j.org/schema/rdf4j#"
+                xmlns:sesame="http://www.openrdf.org/schema/sesame#"
+                xmlns:owl="http://www.w3.org/2002/07/owl#"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+                xmlns:fn="http://www.w3.org/2005/xpath-functions#">
+
+                <Entity rdf:about="https://shfa.dh.gu.se/3d/{{ data.id }}">
+                    <rdf:type rdf:resource="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/AO_Entity"/>
+                    <rdfs:label>Record SHFA 3D {{ data.id }}</rdfs:label>
+                    <has_publisher xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/Swedish%20Rock%20Art%20Research%20Archives"/>
+                    <has_title>{% get_3d_title data %}</has_title>
+                    <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{data.updated_at|date:"Y-m-d"}}</was_modified>
+                    <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{data.created_at|date:"Y-m-d"}}</was_issued>
+                    <affiliation>SHFA</affiliation>
+                    <description_en xml:lang="en">3D model of {{data.site.placename}}, created by {% get_3d_creators data %} at {{data.institution.name}}{% if data.date %} ({{data.date|date:"Y"}}){% endif %}.</description_en>
+                    <description_sv xml:lang="sv">3D-modell av {{data.site.placename}}, skapad av {% get_3d_creators data %} på {{data.institution.name}}{% if data.date %} ({{data.date|date:"Y"}}){% endif %}.</description_sv>
+                    <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
+                    <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
+                    
+                    <model_3d_id>{{data.id}}</model_3d_id>
+                    {% if data.site.raa_id %}
+                        <RAÄ_nr>{{data.site.raa_id}}</RAÄ_nr>
+                    {% endif %}
+                    {% if data.site.lamning_id %}
+                        <lamningsnummer>{{data.site.lamning_id}}</lamningsnummer>
+                    {% endif %}
+                    {% if data.site.askeladden_id %}
+                        <askeladden_id>{{data.site.askeladden_id}}</askeladden_id>
+                    {% endif %}
+                    {% if data.site.lokalitet_id %}
+                        <lokalitet_id>{{data.site.lokalitet_id}}</lokalitet_id>
+                    {% endif %}
+                    <site_name>{{data.site.placename}}</site_name>
+
+                    <country>{{ data.site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                    <municipality>{{ data.site.municipality.superregion.name }}</municipality>
+                    <province>{{ data.site.province.name }}</province>
+                    <parish>{{ data.site.parish.name }}</parish>
+                    <latitude>{{ data.site.coordinates.y }}</latitude>
+                    <longitude>{{ data.site.coordinates.x }}</longitude>
+                    {% if data.three_d_mesh and data.three_d_mesh.mesh_url %}
+                    <meshURL>{{data.three_d_mesh.mesh_url}}</meshURL>
+                    {% endif %}
+                    <URL>https://shfa.dh.gu.se/3d/{{data.id}}</URL>
+                    <copyright>CC-BY</copyright>
+
+                    {% for creator in data.creators.all %}
+                        <originator>{{ creator.name }}</originator>
+                    {% endfor %}
+
+                    {% if data.three_d_mesh and data.three_d_mesh.method %}
+                    <method>{{data.three_d_mesh.method.text}}</method>
+                    {% endif %}
+                    {% if data.date %}
+                    <date>{{data.date|date:"Y-m-d"}}</date>
+                    {% endif %}
+
+                    {% if data.three_d_mesh %}
+                    <mesh_details>
+                        <num_vertices>{{data.three_d_mesh.num_vertices}}</num_vertices>
+                        <num_faces>{{data.three_d_mesh.num_faces}}</num_faces>
+                        {% if data.three_d_mesh.num_photos %}
+                        <num_photos>{{data.three_d_mesh.num_photos}}</num_photos>
+                        {% endif %}
+                    </mesh_details>
+                    {% endif %}
+
+                    {% for period in data.datings.all %}
+                        <period>{{ period.text }}</period>
+                    {% endfor %}
+
+                    {% for tag in data.keywords.all %}
+                        <keywords>
+                            <sourceLabel>{{tag.text}}</sourceLabel>
+                            <sourceLabelLanguage>sv</sourceLabelLanguage>
+                            {% if tag.att_vocab %}
+                            <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
+                            <targetLabel>{{tag.att_vocab.term}}</targetLabel>
+                            <targetURI>{{tag.att_vocab.link}}</targetURI>
+                            {% endif %}
+                        </keywords>
+                    {% endfor %}
+                </Entity>
+                
+            </rdf:RDF>
+        </metadata>
+    </record>
+{% endif %}
+</ListRecords> 
+{% endblock %}

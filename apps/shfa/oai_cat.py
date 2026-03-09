@@ -10,8 +10,11 @@ NUM_PER_PAGE = 25
 def get_records(params, request):
     template_ksmsak = "../templates/bild.template.xml"
     template_ariande = "../templates/records_ariadne.xml"
+    template_3d_ksmsak = "../templates/3d.template.xml"
+    template_3d_ariande = "../templates/records_3d_ariadne.xml"
     error_template = "../templates/error.xml"
     errors = []
+    record_type = "image"  # default record type
     
     if "metadataPrefix" in params:
         metadata_prefix = params.pop("metadataPrefix")
@@ -25,12 +28,21 @@ def get_records(params, request):
                
             if "identifier" in params:
                 identifier = params.pop("identifier")[-1]
-                try:
-                    output = models.Image.objects.get(id=identifier)
-
-                except models.Image.DoesNotExist:
-                    errors.append(_error(
-                        "idDoesNotExist", identifier))
+                # Check if identifier indicates a 3D model (prefix "3d:")
+                if identifier.startswith("3d:"):
+                    record_type = "3d"
+                    record_id = identifier[3:]
+                    try:
+                        output = models.SHFA3D.objects.get(id=record_id)
+                    except models.SHFA3D.DoesNotExist:
+                        errors.append(_error(
+                            "idDoesNotExist", identifier))
+                else:
+                    try:
+                        output = models.Image.objects.get(id=identifier)
+                    except models.Image.DoesNotExist:
+                        errors.append(_error(
+                            "idDoesNotExist", identifier))
             else:
                 errors.append(_error(
                     "badArgument", "identifier"))
@@ -52,13 +64,20 @@ def get_records(params, request):
             content_type='text/xml'
         )
     else:
-
-        if metadata_prefix == "ksamsok-rdf":
-            template = template_ksmsak
-        elif metadata_prefix == "ariadne-rdf":
-            template = template_ariande
+        if record_type == "3d":
+            if metadata_prefix == "ksamsok-rdf":
+                template = template_3d_ksmsak
+            elif metadata_prefix == "ariadne-rdf":
+                template = template_3d_ariande
+            else:
+                template = template_3d_ksmsak
         else:
-            template = template_ksmsak
+            if metadata_prefix == "ksamsok-rdf":
+                template = template_ksmsak
+            elif metadata_prefix == "ariadne-rdf":
+                template = template_ariande
+            else:
+                template = template_ksmsak
 
         xml_output = render(
             request,
@@ -84,25 +103,52 @@ def get_identify(request):
 def get_list_records(verb, request, params):
     template_ksamsok = "../templates/listrecords.xml"
     template_ariande = "../templates/listrecords_ariadne.xml"
+    template_3d_ksamsok = "../templates/listrecords_3d.xml"
+    template_3d_ariande = "../templates/listrecords_3d_ariadne.xml"
+    template_images_ksamsok = "../templates/listrecords_images.xml"
+    template_images_ariande = "../templates/listrecords_images_ariadne.xml"
     error_template = "../templates/error.xml"
     errors = []
 
-    paginator_images = None
-    images = None
+    paginator_records = None
+    records = None
     resumption_token = None
     metadata_prefix = None
     from_timestamp = None
     until_timestamp = None
+    set_spec = None
+
+    # Extract set parameter if present
+    if "set" in params:
+        set_spec = params.pop("set")[-1]
+        if set_spec not in ("shfa:images", "shfa:models"):
+            errors.append(_error("noSetHierarchy"))
+
+    images = None
+    models_3d = None
+    paginator_images = None
+    paginator_3d = None
 
     if "resumptionToken" in params:
         (
-            paginator_images,
-            images,
+            paginator_records,
+            records,
             resumption_token,
             metadata_prefix,
             from_timestamp,
             until_timestamp,
-        ) = _do_resumption_token(params, errors)
+        ) = _do_resumption_token(params, errors, set_spec=set_spec)
+        # Map records to the right variable based on set
+        if set_spec == "shfa:models":
+            models_3d = records
+            paginator_3d = paginator_records
+        elif set_spec == "shfa:images":
+            images = records
+            paginator_images = paginator_records
+        else:
+            # No set: resumption currently only paginates images
+            images = records
+            paginator_images = paginator_records
 
     elif "metadataPrefix" in params:
         metadata_prefix = params.pop("metadataPrefix")
@@ -113,14 +159,39 @@ def get_list_records(verb, request, params):
             else:
                 from_timestamp, until_timestamp = _check_timestamps(errors, params)
 
-                images_data = models.Image.objects.all()
-                if from_timestamp:
-                    images_data = images_data.filter(created_at__gte=from_timestamp)
-                if until_timestamp:
-                    images_data = images_data.filter(updated_at__lte=until_timestamp)
-
-                paginator_images = Paginator(images_data, NUM_PER_PAGE)
-                images = paginator_images.page(1)
+                if set_spec == "shfa:models":
+                    # Only 3D models
+                    records_3d = models.SHFA3D.objects.all()
+                    if from_timestamp:
+                        records_3d = records_3d.filter(created_at__gte=from_timestamp)
+                    if until_timestamp:
+                        records_3d = records_3d.filter(updated_at__lte=until_timestamp)
+                    paginator_3d = Paginator(records_3d, NUM_PER_PAGE)
+                    models_3d = paginator_3d.page(1)
+                elif set_spec == "shfa:images":
+                    # Only images
+                    images_data = models.Image.objects.all()
+                    if from_timestamp:
+                        images_data = images_data.filter(created_at__gte=from_timestamp)
+                    if until_timestamp:
+                        images_data = images_data.filter(updated_at__lte=until_timestamp)
+                    paginator_images = Paginator(images_data, NUM_PER_PAGE)
+                    images = paginator_images.page(1)
+                else:
+                    # No set specified: return both images and 3D models
+                    images_data = models.Image.objects.all()
+                    records_3d = models.SHFA3D.objects.all()
+                    if from_timestamp:
+                        images_data = images_data.filter(created_at__gte=from_timestamp)
+                        records_3d = records_3d.filter(created_at__gte=from_timestamp)
+                    if until_timestamp:
+                        images_data = images_data.filter(updated_at__lte=until_timestamp)
+                        records_3d = records_3d.filter(updated_at__lte=until_timestamp)
+                    paginator_images = Paginator(images_data, NUM_PER_PAGE)
+                    images = paginator_images.page(1)
+                    # 3D models are not paginated separately in combined mode;
+                    # they are included alongside images in the same response
+                    models_3d = records_3d
         else:
             errors.append(_error("badArgument_single", ";".join(metadata_prefix)))
             metadata_prefix = None
@@ -135,23 +206,47 @@ def get_list_records(verb, request, params):
             content_type="text/xml",
         )
 
-    if metadata_prefix == "ksamsok-rdf":
-        template = template_ksamsok
-    elif metadata_prefix == "shfa-gen-rdf" or metadata_prefix == "ariadne-rdf":
-        template = template_ariande
+    # Select template based on set and metadata prefix
+    # set=shfa:models      -> dedicated 3D-only templates
+    # set=shfa:images   -> dedicated image-only templates
+    # no set            -> combined templates (images + 3D section)
+    if set_spec == "shfa:models":
+        if metadata_prefix == "ksamsok-rdf":
+            template = template_3d_ksamsok
+        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
+            template = template_3d_ariande
+        else:
+            template = template_3d_ksamsok
+    elif set_spec == "shfa:images":
+        if metadata_prefix == "ksamsok-rdf":
+            template = template_images_ksamsok
+        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
+            template = template_images_ariande
+        else:
+            template = template_images_ksamsok
     else:
-        template = template_ksamsok  # fallback default
+        if metadata_prefix == "ksamsok-rdf":
+            template = template_ksamsok
+        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
+            template = template_ariande
+        else:
+            template = template_ksamsok
+
+    # Use the images paginator for resumption token in combined/images mode
+    paginator = paginator_3d if set_spec == "shfa:models" else paginator_images
 
     return render(
         request,
         template_name=template,
         context={
             "images": images,
-            "paginator": paginator_images,
+            "models_3d": models_3d,
+            "paginator": paginator,
             "resumption_token": resumption_token,
             "metadata_prefix": metadata_prefix,
             "from_timestamp": from_timestamp,
             "until_timestamp": until_timestamp,
+            "set_spec": set_spec,
         },
         content_type="text/xml",
     )
@@ -166,10 +261,20 @@ def get_list_metadata(request, params):
     metadataformats = models.MetadataFormat.objects.all()
     if "identifier" in params:
         identifier = params.pop("identifier")[-1]
-        if models.Image.objects.filter(identifier=identifier).exists():
-            metadataformats = models.MetadataFormat.objects.filter(prefix='ksamsok-rdf')
+        # Check both Image and SHFA3D models for the identifier
+        if identifier.startswith("3d:"):
+            record_id = identifier[3:]
+            if models.SHFA3D.objects.filter(id=record_id).exists():
+                metadataformats = models.MetadataFormat.objects.filter(prefix='ksamsok-rdf')
+            else:
+                errors.append(_error("idDoesNotExist", identifier))
         else:
-            errors.append(_error("idDoesNotExist", identifier))
+            if models.Image.objects.filter(identifier=identifier).exists():
+                metadataformats = models.MetadataFormat.objects.filter(prefix='ksamsok-rdf')
+            elif models.SHFA3D.objects.filter(id=identifier).exists():
+                metadataformats = models.MetadataFormat.objects.filter(prefix='ksamsok-rdf')
+            else:
+                errors.append(_error("idDoesNotExist", identifier))
     if metadataformats.count() == 0:
         errors.append(_error("noMetadataFormats"))
 
@@ -234,11 +339,17 @@ def get_list_set(request, params):
     )
 
 
-def _do_resumption_token(params, errors):
+def _do_resumption_token(params, errors, set_spec=None):
     metadata_prefix = None
     from_timestamp = None
     until_timestamp = None
     resumption_token = None
+
+    # Select the appropriate model based on the set parameter
+    if set_spec == "shfa:models":
+        data_model = models.SHFA3D.objects
+    else:
+        data_model = models.Image.objects
 
     if "resumptionToken" in params:
         resumption_token = params.pop("resumptionToken")[-1]
@@ -248,24 +359,24 @@ def _do_resumption_token(params, errors):
                 errors.append(_error(
                     "badResumptionToken_expired.", resumption_token))
             else:
-                images_data = models.Image.objects
+                records_data = data_model
                 if from_timestamp is not None:
-                    images_data = images_data.filter(created_at__gte=from_timestamp)
+                    records_data = records_data.filter(created_at__gte=from_timestamp)
                 if until_timestamp is not None:
-                    images_data = images_data.filter(updated_at__gte=until_timestamp)
+                    records_data = records_data.filter(updated_at__gte=until_timestamp)
 
                 try:
-                    paginator = Paginator(images_data.all(), NUM_PER_PAGE)
-                    images = paginator.page(rt.cursor / NUM_PER_PAGE + 1)
+                    paginator = Paginator(records_data.all(), NUM_PER_PAGE)
+                    records = paginator.page(rt.cursor / NUM_PER_PAGE + 1)
 
                 except EmptyPage:
                     errors.append(_error(
                         "badResumptionToken", resumption_token))
 
         except models.ResumptionToken.DoesNotExist:
-            images_data = models.Image.objects
-            paginator = Paginator(images_data, NUM_PER_PAGE)
-            images = paginator.page(1)
+            records_data = data_model
+            paginator = Paginator(records_data, NUM_PER_PAGE)
+            records = paginator.page(1)
             errors.append(_error(
                 "badResumptionToken", resumption_token))
 
@@ -275,14 +386,14 @@ def _do_resumption_token(params, errors):
         #     msg="The usage of resumptionToken allows no other arguments.",
         # )
     else:
-        images_data = models.Image.objects
-        paginator = Paginator(images_data, NUM_PER_PAGE)
-        images = paginator.page(1)
+        records_data = data_model
+        paginator = Paginator(records_data, NUM_PER_PAGE)
+        records = paginator.page(1)
         
 
     return (
         paginator,
-        images,
+        records,
         resumption_token,
         metadata_prefix,
         from_timestamp,

@@ -139,7 +139,6 @@ migrations
 *.env
 /test
 /static_build/
-/apps/*/*
 /static/
 */**/.DS_Store
 # /apps/*.py

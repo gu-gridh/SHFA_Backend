@@ -157,3 +157,39 @@ def get_image_description(image):
 def get_image_description_type():
     """Return the type for ItemDescription."""
     return "motivbeskrivning"
+
+
+# 3D model template tags
+
+@register.simple_tag
+def get_3d_tags(model_3d):
+    """Get keyword tags for a 3D model."""
+    tags = [keyword.text for keyword in model_3d.keywords.all()]
+    return ", ".join(tags)
+
+
+@register.simple_tag
+def get_3d_title(model_3d):
+    """Get a descriptive title for a 3D model."""
+    site_name = model_3d.site.placename if model_3d.site else "Unknown site"
+    if model_3d.site and model_3d.site.raa_id:
+        title = f"3D model: {model_3d.site.raa_id}, SHFA 3D ID {model_3d.id}"
+    elif model_3d.site and model_3d.site.lamning_id:
+        title = f"3D model: {model_3d.site.lamning_id}, SHFA 3D ID {model_3d.id}"
+    else:
+        title = f"3D model: {site_name}, SHFA 3D ID {model_3d.id}"
+    return title
+
+
+@register.simple_tag
+def get_3d_creators(model_3d):
+    """Get creator names for a 3D model."""
+    creator_names = [creator.name for creator in model_3d.creators.all()]
+    return ", ".join(creator_names)
+
+
+@register.simple_tag
+def get_3d_datings(model_3d):
+    """Get dating tags for a 3D model."""
+    datings = [dating.text for dating in model_3d.datings.all()]
+    return ", ".join(datings)

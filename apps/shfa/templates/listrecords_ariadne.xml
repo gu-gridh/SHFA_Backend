@@ -98,6 +98,113 @@
             </record>
         {% endif %}
     {% endfor %}
+
+    {# ===== 3D Data Section ===== #}
+    {% if models_3d %}
+    {% for model_3d in models_3d %}
+        {% if model_3d.site.coordinates %}
+            <record>
+                <header>
+                    <identifier>oai:shfa.dh.gu.se:3d/{{ model_3d.id }}</identifier>
+                    <datestamp>{% now "Y-m-d\\TH:i:s\\Z" %}</datestamp>
+                    <setSpec>shfa:3d</setSpec>
+                </header>
+
+                <metadata>
+                    <rdf:RDF
+                        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                        xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+                        xmlns:rdf4j="http://rdf4j.org/schema/rdf4j#"
+                        xmlns:sesame="http://www.openrdf.org/schema/sesame#"
+                        xmlns:owl="http://www.w3.org/2002/07/owl#"
+                        xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+                        xmlns:fn="http://www.w3.org/2005/xpath-functions#">
+
+                        <Entity rdf:about="https://shfa.dh.gu.se/3d/{{ model_3d.id }}">
+                            <rdf:type rdf:resource="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/AO_Entity"/>
+                            <rdfs:label>Record SHFA 3D {{ model_3d.id }}</rdfs:label>
+                            <has_publisher xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/Swedish%20Rock%20Art%20Research%20Archives"/>
+                            <has_title>{% get_3d_title model_3d %}</has_title>
+                            <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{model_3d.updated_at|date:"Y-m-d"}}</was_modified>
+                            <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{model_3d.created_at|date:"Y-m-d"}}</was_issued>
+                            <affiliation>SHFA</affiliation>
+                            <description_en xml:lang="en">3D model of {{model_3d.site.placename}}, created by {% get_3d_creators model_3d %} at {{model_3d.institution.name}}{% if model_3d.date %} ({{model_3d.date|date:"Y"}}){% endif %}.</description_en>
+                            <description_sv xml:lang="sv">3D-modell av {{model_3d.site.placename}}, skapad av {% get_3d_creators model_3d %} på {{model_3d.institution.name}}{% if model_3d.date %} ({{model_3d.date|date:"Y"}}){% endif %}.</description_sv>
+                            <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
+                            <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
+                            
+                            <model_3d_id>{{model_3d.id}}</model_3d_id>
+                            {% if model_3d.site.raa_id %}
+                                <RAÄ_nr>{{model_3d.site.raa_id}}</RAÄ_nr>
+                            {% endif %}
+                            {% if model_3d.site.lamning_id %}
+                                <lamningsnummer>{{model_3d.site.lamning_id}}</lamningsnummer>
+                            {% endif %}
+                            {% if model_3d.site.askeladden_id %}
+                                <askeladden_id>{{model_3d.site.askeladden_id}}</askeladden_id>
+                            {% endif %}
+                            {% if model_3d.site.lokalitet_id %}
+                                <lokalitet_id>{{model_3d.site.lokalitet_id}}</lokalitet_id>
+                            {% endif %}
+                            <site_name>{{model_3d.site.placename}}</site_name>
+
+                            <country>{{ model_3d.site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                            <municipality>{{ model_3d.site.municipality.superregion.name }}</municipality>
+                            <province>{{ model_3d.site.province.name }}</province>
+                            <parish>{{model_3d.site.parish.name}}</parish>
+                            <county>{{model_3d.site.province.name}}</county>
+                            <latitude>{{ model_3d.site.coordinates.y }}</latitude>
+                            <longitude>{{ model_3d.site.coordinates.x }}</longitude>
+                            {% if model_3d.three_d_mesh and model_3d.three_d_mesh.mesh_url %}
+                            <meshURL>{{model_3d.three_d_mesh.mesh_url}}</meshURL>
+                            {% endif %}
+                            <URL>https://shfa.dh.gu.se/3d/{{model_3d.id}}</URL>
+                            <copyright>CC-BY</copyright>
+
+                            {% for creator in model_3d.creators.all %}
+                                <originator>{{ creator.name }}</originator>
+                            {% endfor %}
+
+                            {% if model_3d.three_d_mesh and model_3d.three_d_mesh.method %}
+                            <method>{{model_3d.three_d_mesh.method.text}}</method>
+                            {% endif %}
+                            {% if model_3d.date %}
+                            <date>{{model_3d.date|date:"Y-m-d"}}</date>
+                            {% endif %}
+
+                            {% if model_3d.three_d_mesh %}
+                            <mesh_details>
+                                <num_vertices>{{model_3d.three_d_mesh.num_vertices}}</num_vertices>
+                                <num_faces>{{model_3d.three_d_mesh.num_faces}}</num_faces>
+                                {% if model_3d.three_d_mesh.num_photos %}
+                                <num_photos>{{model_3d.three_d_mesh.num_photos}}</num_photos>
+                                {% endif %}
+                            </mesh_details>
+                            {% endif %}
+
+                            {% for period in model_3d.datings.all %}
+                                <period>{{ period.text }}</period>
+                            {% endfor %}
+
+                            {% for tag in model_3d.keywords.all %}
+                                <keywords>
+                                    <sourceLabel>{{tag.text}}</sourceLabel>
+                                    <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                    {% if tag.att_vocab %}
+                                    <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
+                                    <targetLabel>{{tag.att_vocab.term}}</targetLabel>
+                                    <targetURI>{{tag.att_vocab.link}}</targetURI>
+                                    {% endif %}
+                                </keywords>
+                            {% endfor %}
+                        </Entity>
+                    </rdf:RDF>
+                </metadata>
+            </record>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+
     {% resumption_token paginator images metadata_prefix from_timestamp until_timestamp %}
 </ListRecords> 
 {% endblock %}
