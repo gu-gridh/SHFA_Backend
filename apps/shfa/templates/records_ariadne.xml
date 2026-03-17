@@ -87,9 +87,9 @@
                         <keywords>
                             <sourceLabel>{{tag.text}}</sourceLabel>
                             <sourceLabelLanguage>sv</sourceLabelLanguage>
-                            <matchURI>{{tag.aat_vocab.skos_match}}</matchURI>
-                            <targetLabel>{{tag.aat_vocab.terms}}</targetLabel>
-                            <targetURI>{{tag.aat_vocab.link}}</targetURI>
+                            <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
+                            <targetLabel>{{tag.att_vocab.terms}}</targetLabel>
+                            <targetURI>{{tag.att_vocab.link}}</targetURI>
                         </keywords>
                     {% endfor %}
                 </Entity>

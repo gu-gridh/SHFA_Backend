@@ -3,6 +3,7 @@ from . import models
 from django.utils import timezone
 from datetime import datetime
 from django.core.paginator import Paginator, EmptyPage
+from django.db.models import Q
 
 NUM_PER_PAGE = 25
 
@@ -101,9 +102,9 @@ def get_identify(request):
 
 
 def get_list_records(verb, request, params):
-    template_ksamsok = "../templates/listrecords.xml"
+    template_ksamsok = "../templates/listrecords_site_ksamsok.xml"
     template_ariande = "../templates/listrecords_ariadne.xml"
-    template_3d_ksamsok = "../templates/listrecords_3d.xml"
+    template_3d_ksamsok = "../templates/listrecords_group_ksamsok.xml"
     template_3d_ariande = "../templates/listrecords_3d_ariadne.xml"
     template_images_ksamsok = "../templates/listrecords_images.xml"
     template_images_ariande = "../templates/listrecords_images_ariadne.xml"
@@ -121,13 +122,17 @@ def get_list_records(verb, request, params):
     # Extract set parameter if present
     if "set" in params:
         set_spec = params.pop("set")[-1]
-        if set_spec not in ("shfa:images", "shfa:models"):
+        if set_spec not in ("shfa:images", "shfa:models", "comp"):
             errors.append(_error("noSetHierarchy"))
 
     images = None
     models_3d = None
+    sites = None
+    groups = None
     paginator_images = None
     paginator_3d = None
+    paginator_sites = None
+    paginator_groups = None
 
     if "resumptionToken" in params:
         (
@@ -138,15 +143,14 @@ def get_list_records(verb, request, params):
             from_timestamp,
             until_timestamp,
         ) = _do_resumption_token(params, errors, set_spec=set_spec)
-        # Map records to the right variable based on set
-        if set_spec == "shfa:models":
-            models_3d = records
-            paginator_3d = paginator_records
-        elif set_spec == "shfa:images":
-            images = records
-            paginator_images = paginator_records
+        # Map records to the right variable based on format and set
+        if set_spec in (None, "comp"):
+            sites = records
+            paginator_sites = paginator_records
+        elif set_spec == "shfa:models":
+            groups = records
+            paginator_groups = paginator_records
         else:
-            # No set: resumption currently only paginates images
             images = records
             paginator_images = paginator_records
 
@@ -159,17 +163,88 @@ def get_list_records(verb, request, params):
             else:
                 from_timestamp, until_timestamp = _check_timestamps(errors, params)
 
-                if set_spec == "shfa:models":
-                    # Only 3D models
-                    records_3d = models.SHFA3D.objects.all()
+                is_ariadne = metadata_prefix in ("ariadne-rdf", "shfa-gen-rdf")
+
+                if is_ariadne and set_spec in (None, "comp"):
+                    # ARIADNE, no set or comp: site-based records with all resources
+                    sites_qs = models.Site.objects.filter(
+                        coordinates__isnull=False
+                    ).filter(
+                        Q(image__isnull=False) | Q(shfa3d__isnull=False)
+                    ).distinct().prefetch_related(
+                        'image_set', 'image_set__people',
+                        'image_set__keywords', 'image_set__keywords__att_vocab',
+                        'image_set__dating_tags', 'image_set__type',
+                        'image_set__subtype', 'image_set__institution',
+                        'image_set__rock_carving_object',
+                        'shfa3d_set', 'shfa3d_set__creators',
+                        'shfa3d_set__keywords', 'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                    )
                     if from_timestamp:
-                        records_3d = records_3d.filter(created_at__gte=from_timestamp)
+                        sites_qs = sites_qs.filter(updated_at__gte=from_timestamp)
                     if until_timestamp:
-                        records_3d = records_3d.filter(updated_at__lte=until_timestamp)
-                    paginator_3d = Paginator(records_3d, NUM_PER_PAGE)
-                    models_3d = paginator_3d.page(1)
+                        sites_qs = sites_qs.filter(updated_at__lte=until_timestamp)
+                    paginator_sites = Paginator(sites_qs, NUM_PER_PAGE)
+                    sites = paginator_sites.page(1)
+                elif is_ariadne and set_spec == "shfa:models":
+                    # ARIADNE, set=models: group-based records
+                    groups_qs = models.Group.objects.filter(
+                        shfa3d_set__isnull=False
+                    ).distinct().prefetch_related(
+                        'shfa3d_set', 'shfa3d_set__site',
+                        'shfa3d_set__creators',
+                        'shfa3d_set__keywords', 'shfa3d_set__keywords__att_vocab',
+                        'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                        'images_set', 'images_set__people',
+                        'images_set__keywords', 'images_set__keywords__att_vocab',
+                        'images_set__dating_tags', 'images_set__type',
+                        'images_set__subtype', 'images_set__institution',
+                        'images_set__site', 'images_set__rock_carving_object',
+                    )
+                    if from_timestamp:
+                        groups_qs = groups_qs.filter(updated_at__gte=from_timestamp)
+                    if until_timestamp:
+                        groups_qs = groups_qs.filter(updated_at__lte=until_timestamp)
+                    paginator_groups = Paginator(groups_qs, NUM_PER_PAGE)
+                    groups = paginator_groups.page(1)
+                elif is_ariadne and set_spec == "shfa:images":
+                    # ARIADNE, set=images: per-image records
+                    images_data = models.Image.objects.all()
+                    if from_timestamp:
+                        images_data = images_data.filter(created_at__gte=from_timestamp)
+                    if until_timestamp:
+                        images_data = images_data.filter(updated_at__lte=until_timestamp)
+                    paginator_images = Paginator(images_data, NUM_PER_PAGE)
+                    images = paginator_images.page(1)
+                elif set_spec == "shfa:models":
+                    # ksamsok, set=models: group-based records
+                    groups_qs = models.Group.objects.filter(
+                        shfa3d_set__isnull=False
+                    ).distinct().prefetch_related(
+                        'shfa3d_set', 'shfa3d_set__site',
+                        'shfa3d_set__creators',
+                        'shfa3d_set__keywords',
+                        'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                        'images_set', 'images_set__people',
+                        'images_set__keywords',
+                        'images_set__dating_tags', 'images_set__type',
+                        'images_set__subtype', 'images_set__institution',
+                        'images_set__site', 'images_set__rock_carving_object',
+                    )
+                    if from_timestamp:
+                        groups_qs = groups_qs.filter(updated_at__gte=from_timestamp)
+                    if until_timestamp:
+                        groups_qs = groups_qs.filter(updated_at__lte=until_timestamp)
+                    paginator_groups = Paginator(groups_qs, NUM_PER_PAGE)
+                    groups = paginator_groups.page(1)
                 elif set_spec == "shfa:images":
-                    # Only images
+                    # ksamsok, set=images: per-image records
                     images_data = models.Image.objects.all()
                     if from_timestamp:
                         images_data = images_data.filter(created_at__gte=from_timestamp)
@@ -178,20 +253,28 @@ def get_list_records(verb, request, params):
                     paginator_images = Paginator(images_data, NUM_PER_PAGE)
                     images = paginator_images.page(1)
                 else:
-                    # No set specified: return both images and 3D models
-                    images_data = models.Image.objects.all()
-                    records_3d = models.SHFA3D.objects.all()
+                    # ksamsok, no set or comp: site-based records
+                    sites_qs = models.Site.objects.filter(
+                        coordinates__isnull=False
+                    ).filter(
+                        Q(image__isnull=False) | Q(shfa3d__isnull=False)
+                    ).distinct().prefetch_related(
+                        'image_set', 'image_set__people',
+                        'image_set__keywords',
+                        'image_set__dating_tags', 'image_set__type',
+                        'image_set__subtype', 'image_set__institution',
+                        'image_set__rock_carving_object',
+                        'shfa3d_set', 'shfa3d_set__creators',
+                        'shfa3d_set__keywords', 'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                    )
                     if from_timestamp:
-                        images_data = images_data.filter(created_at__gte=from_timestamp)
-                        records_3d = records_3d.filter(created_at__gte=from_timestamp)
+                        sites_qs = sites_qs.filter(updated_at__gte=from_timestamp)
                     if until_timestamp:
-                        images_data = images_data.filter(updated_at__lte=until_timestamp)
-                        records_3d = records_3d.filter(updated_at__lte=until_timestamp)
-                    paginator_images = Paginator(images_data, NUM_PER_PAGE)
-                    images = paginator_images.page(1)
-                    # 3D models are not paginated separately in combined mode;
-                    # they are included alongside images in the same response
-                    models_3d = records_3d
+                        sites_qs = sites_qs.filter(updated_at__lte=until_timestamp)
+                    paginator_sites = Paginator(sites_qs, NUM_PER_PAGE)
+                    sites = paginator_sites.page(1)
         else:
             errors.append(_error("badArgument_single", ";".join(metadata_prefix)))
             metadata_prefix = None
@@ -206,34 +289,26 @@ def get_list_records(verb, request, params):
             content_type="text/xml",
         )
 
-    # Select template based on set and metadata prefix
-    # set=shfa:models      -> dedicated 3D-only templates
-    # set=shfa:images   -> dedicated image-only templates
-    # no set            -> combined templates (images + 3D section)
-    if set_spec == "shfa:models":
-        if metadata_prefix == "ksamsok-rdf":
-            template = template_3d_ksamsok
-        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
-            template = template_3d_ariande
-        else:
-            template = template_3d_ksamsok
+    # Select template and paginator based on metadata prefix and set
+    is_ariadne = metadata_prefix in ("ariadne-rdf", "shfa-gen-rdf")
+    if is_ariadne and set_spec in (None, "comp"):
+        template = template_ariande
+        paginator = paginator_sites
+    elif is_ariadne and set_spec == "shfa:models":
+        template = template_3d_ariande
+        paginator = paginator_groups
+    elif is_ariadne and set_spec == "shfa:images":
+        template = template_images_ariande
+        paginator = paginator_images
+    elif set_spec == "shfa:models":
+        template = template_3d_ksamsok
+        paginator = paginator_groups
     elif set_spec == "shfa:images":
-        if metadata_prefix == "ksamsok-rdf":
-            template = template_images_ksamsok
-        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
-            template = template_images_ariande
-        else:
-            template = template_images_ksamsok
+        template = template_images_ksamsok
+        paginator = paginator_images
     else:
-        if metadata_prefix == "ksamsok-rdf":
-            template = template_ksamsok
-        elif metadata_prefix in ("shfa-gen-rdf", "ariadne-rdf"):
-            template = template_ariande
-        else:
-            template = template_ksamsok
-
-    # Use the images paginator for resumption token in combined/images mode
-    paginator = paginator_3d if set_spec == "shfa:models" else paginator_images
+        template = template_ksamsok
+        paginator = paginator_sites
 
     return render(
         request,
@@ -241,6 +316,8 @@ def get_list_records(verb, request, params):
         context={
             "images": images,
             "models_3d": models_3d,
+            "sites": sites,
+            "groups": groups,
             "paginator": paginator,
             "resumption_token": resumption_token,
             "metadata_prefix": metadata_prefix,
@@ -345,11 +422,8 @@ def _do_resumption_token(params, errors, set_spec=None):
     until_timestamp = None
     resumption_token = None
 
-    # Select the appropriate model based on the set parameter
-    if set_spec == "shfa:models":
-        data_model = models.SHFA3D.objects
-    else:
-        data_model = models.Image.objects
+    paginator = None
+    records = None
 
     if "resumptionToken" in params:
         resumption_token = params.pop("resumptionToken")[-1]
@@ -359,14 +433,55 @@ def _do_resumption_token(params, errors, set_spec=None):
                 errors.append(_error(
                     "badResumptionToken_expired.", resumption_token))
             else:
-                records_data = data_model
+                # Get metadata prefix from stored token
+                if rt.metadata_prefix:
+                    metadata_prefix = rt.metadata_prefix.prefix
+                from_timestamp = rt.from_timestamp
+                until_timestamp = rt.until_timestamp
+
+                # Select the appropriate model based on set
+                if set_spec in (None, "comp"):
+                    records_qs = models.Site.objects.filter(
+                        coordinates__isnull=False
+                    ).filter(
+                        Q(image__isnull=False) | Q(shfa3d__isnull=False)
+                    ).distinct().prefetch_related(
+                        'image_set', 'image_set__people',
+                        'image_set__keywords', 'image_set__keywords__att_vocab',
+                        'image_set__dating_tags', 'image_set__type',
+                        'image_set__subtype', 'image_set__institution',
+                        'image_set__rock_carving_object',
+                        'shfa3d_set', 'shfa3d_set__creators',
+                        'shfa3d_set__keywords', 'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                    )
+                elif set_spec == "shfa:models":
+                    records_qs = models.Group.objects.filter(
+                        shfa3d_set__isnull=False
+                    ).distinct().prefetch_related(
+                        'shfa3d_set', 'shfa3d_set__site',
+                        'shfa3d_set__creators',
+                        'shfa3d_set__keywords', 'shfa3d_set__keywords__att_vocab',
+                        'shfa3d_set__datings',
+                        'shfa3d_set__institution', 'shfa3d_set__three_d_mesh',
+                        'shfa3d_set__three_d_mesh__method',
+                        'images_set', 'images_set__people',
+                        'images_set__keywords', 'images_set__keywords__att_vocab',
+                        'images_set__dating_tags', 'images_set__type',
+                        'images_set__subtype', 'images_set__institution',
+                        'images_set__site', 'images_set__rock_carving_object',
+                    )
+                else:
+                    records_qs = models.Image.objects.all()
+
                 if from_timestamp is not None:
-                    records_data = records_data.filter(created_at__gte=from_timestamp)
+                    records_qs = records_qs.filter(created_at__gte=from_timestamp)
                 if until_timestamp is not None:
-                    records_data = records_data.filter(updated_at__gte=until_timestamp)
+                    records_qs = records_qs.filter(updated_at__lte=until_timestamp)
 
                 try:
-                    paginator = Paginator(records_data.all(), NUM_PER_PAGE)
+                    paginator = Paginator(records_qs, NUM_PER_PAGE)
                     records = paginator.page(rt.cursor / NUM_PER_PAGE + 1)
 
                 except EmptyPage:
@@ -374,22 +489,14 @@ def _do_resumption_token(params, errors, set_spec=None):
                         "badResumptionToken", resumption_token))
 
         except models.ResumptionToken.DoesNotExist:
-            records_data = data_model
-            paginator = Paginator(records_data, NUM_PER_PAGE)
-            records = paginator.page(1)
             errors.append(_error(
                 "badResumptionToken", resumption_token))
 
-        # check_bad_arguments(
-        #     params,
-        #     errors,
-        #     msg="The usage of resumptionToken allows no other arguments.",
-        # )
     else:
-        records_data = data_model
-        paginator = Paginator(records_data, NUM_PER_PAGE)
+        # No resumption token — this shouldn't normally be called without one
+        records_qs = models.Image.objects.all()
+        paginator = Paginator(records_qs, NUM_PER_PAGE)
         records = paginator.page(1)
-        
 
     return (
         paginator,

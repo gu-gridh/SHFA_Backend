@@ -193,3 +193,41 @@ def get_3d_datings(model_3d):
     """Get dating tags for a 3D model."""
     datings = [dating.text for dating in model_3d.datings.all()]
     return ", ".join(datings)
+
+
+@register.simple_tag
+def get_site_unique_keywords(site):
+    """Get unique keywords from all images and 3D models at a site.
+    Returns a list of dicts with keyword info for use in templates."""
+    seen = set()
+    unique = []
+    for image in site.image_set.all():
+        for tag in image.keywords.all():
+            if tag.id not in seen:
+                seen.add(tag.id)
+                unique.append(tag)
+    for model_3d in site.shfa3d_set.all():
+        for tag in model_3d.keywords.all():
+            if tag.id not in seen:
+                seen.add(tag.id)
+                unique.append(tag)
+    return unique
+
+
+@register.simple_tag
+def get_group_unique_keywords(group):
+    """Get unique keywords from all items in a visualisation group.
+    Merges keywords from 3D models and images sharing the same group."""
+    seen = set()
+    unique = []
+    for model_3d in group.shfa3d_set.all():
+        for tag in model_3d.keywords.all():
+            if tag.id not in seen:
+                seen.add(tag.id)
+                unique.append(tag)
+    for image in group.images_set.all():
+        for tag in image.keywords.all():
+            if tag.id not in seen:
+                seen.add(tag.id)
+                unique.append(tag)
+    return unique
