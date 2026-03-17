@@ -15,7 +15,6 @@ All requests are either `GET` or `POST`. The `verb` parameter selects the operat
 | Prefix | Description |
 |---|---|
 | `ksamsok-rdf` | K-samsök (Swedish cultural heritage) RDF format |
-| `ariadne-rdf` | ARIADNE EU infrastructure RDF format |
 | `shfa-gen-rdf` | SHFA generic RDF (treated same as `ariadne-rdf`) |
 
 ## Sets
