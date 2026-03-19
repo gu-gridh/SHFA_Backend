@@ -23,7 +23,7 @@ All requests are either `GET` or `POST`. The `verb` parameter selects the operat
 |---|---|
 | `shfa:images` | Only image records (per-image) |
 | `shfa:models` | 3D model records (grouped by visualisation group) |
-| `comp` | Combined / composite — same behaviour as no set (site-based) |
+| `shfa:comp` | Combined / composite — same behaviour as no set (site-based) |
 
 ---
 
@@ -124,8 +124,8 @@ Retrieves paginated lists of records. This is the main harvesting verb.
 | Parameter | Required | Description |
 |---|---|---|
 | `metadataPrefix` | **Yes** (or `resumptionToken`) | Metadata format to use |
-| `set` | Optional | Filter by set: `shfa:images`, `shfa:models`, or `comp` |
-| `from` | Optional | Start date filter (`YYYY-MM-DD` or `YYYY-MM-DDThh:mm:ssZ`) |
+| `set` | Optional | Filter by set: `shfa:images`, `shfa:models`, or `shfa:comp` |
+| `from` | Optional | Start date filter (`YYYY-MM-DD` or `YYYY-MM-DDThh:mm:ssZ:`) |
 | `until` | Optional | End date filter (same granularity as `from`) |
 | `resumptionToken` | **Yes** (for page 2+) | Token from a previous response to get the next page |
 
@@ -139,7 +139,7 @@ The combination of `metadataPrefix` and `set` determines what kind of records ar
 
 | Set | Grouping | Record identifier | Template |
 |---|---|---|---|
-| *(none)* or `comp` | **Site-based** — one record per archaeological site, containing all its images and 3D models | `oai:shfa.dh.gu.se:site/{id}` | `listrecords_site_ksamsok.xml` |
+| *(none)* or `shfa:comp` | **Site-based** — one record per archaeological site, containing all its images and 3D models | `oai:shfa.dh.gu.se:site/{id}` | `listrecords_site_ksamsok.xml` |
 | `shfa:models` | **Group-based** — one record per visualisation group, containing its 3D models and associated images | `oai:shfa.dh.gu.se:group/{id}` | `listrecords_group_ksamsok.xml` |
 | `shfa:images` | **Per-image** — one record per image | `oai:shfa.dh.gu.se:objects/{id}` | `listrecords_images.xml` |
 
@@ -147,7 +147,7 @@ The combination of `metadataPrefix` and `set` determines what kind of records ar
 
 | Set | Grouping | Record identifier | Template |
 |---|---|---|---|
-| *(none)* or `comp` | **Site-based** — one record per site with unique merged keywords | `oai:shfa.dh.gu.se:site/{id}` | `listrecords_ariadne.xml` |
+| *(none)* or `shfa:comp` | **Site-based** — one record per site with unique merged keywords | `oai:shfa.dh.gu.se:site/{id}` | `listrecords_ariadne.xml` |
 | `shfa:models` | **Group-based** — one record per visualisation group with unique merged keywords | `oai:shfa.dh.gu.se:group/{id}` | `listrecords_3d_ariadne.xml` |
 | `shfa:images` | **Per-image** — one record per image with original keywords | `oai:shfa.dh.gu.se:objects/{id}` | `listrecords_images_ariadne.xml` |
 
@@ -155,7 +155,7 @@ The combination of `metadataPrefix` and `set` determines what kind of records ar
 
 ```
 # K-samsök, site-based (default)
-?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=comp
+?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=shfa:comp
 
 # K-samsök, group-based 3D models
 ?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=shfa:models
@@ -164,7 +164,7 @@ The combination of `metadataPrefix` and `set` determines what kind of records ar
 ?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=shfa:images
 
 # ARIADNE, site-based (default)
-?verb=ListRecords&metadataPrefix=ariadne-rdf&set=comp
+?verb=ListRecords&metadataPrefix=ariadne-rdf&set=shfa:comp
 
 # ARIADNE, group-based 3D models
 ?verb=ListRecords&metadataPrefix=ariadne-rdf&set=shfa:models
@@ -173,7 +173,7 @@ The combination of `metadataPrefix` and `set` determines what kind of records ar
 ?verb=ListRecords&metadataPrefix=ariadne-rdf&set=shfa:images
 
 # With date filtering
-?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=comp&from=2024-01-01&until=2025-12-31
+?verb=ListRecords&metadataPrefix=ksamsok-rdf&set=shfa:comp&from=2024-01-01&until=2025-12-31
 
 # Resumption (page 2+)
 ?verb=ListRecords&metadataPrefix=ksamsok-rdf&resumptionToken=abc123
