@@ -144,7 +144,7 @@ def get_list_records(verb, request, params):
             until_timestamp,
         ) = _do_resumption_token(params, errors, set_spec=set_spec)
         # Map records to the right variable based on format and set
-        if set_spec in (None, "comp"):
+        if set_spec in (None, "shfa:comp"):
             sites = records
             paginator_sites = paginator_records
         elif set_spec == "shfa:models":
@@ -165,8 +165,8 @@ def get_list_records(verb, request, params):
 
                 is_ariadne = metadata_prefix in ("ariadne-rdf", "shfa-gen-rdf")
 
-                if is_ariadne and set_spec in (None, "comp"):
-                    # ARIADNE, no set or comp: site-based records with all resources
+                if is_ariadne and set_spec in (None, "shfa:comp"):
+                    # ARIADNE, no set or shfa:comp: site-based records with all resources
                     sites_qs = models.Site.objects.filter(
                         coordinates__isnull=False
                     ).filter(
@@ -253,7 +253,7 @@ def get_list_records(verb, request, params):
                     paginator_images = Paginator(images_data, NUM_PER_PAGE)
                     images = paginator_images.page(1)
                 else:
-                    # ksamsok, no set or comp: site-based records
+                    # ksamsok, no set or shfa:comp: site-based records
                     sites_qs = models.Site.objects.filter(
                         coordinates__isnull=False
                     ).filter(
@@ -291,7 +291,7 @@ def get_list_records(verb, request, params):
 
     # Select template and paginator based on metadata prefix and set
     is_ariadne = metadata_prefix in ("ariadne-rdf", "shfa-gen-rdf")
-    if is_ariadne and set_spec in (None, "comp"):
+    if is_ariadne and set_spec in (None, "shfa:comp"):
         template = template_ariande
         paginator = paginator_sites
     elif is_ariadne and set_spec == "shfa:models":
@@ -440,7 +440,7 @@ def _do_resumption_token(params, errors, set_spec=None):
                 until_timestamp = rt.until_timestamp
 
                 # Select the appropriate model based on set
-                if set_spec in (None, "comp"):
+                if set_spec in (None, "shfa:comp"):
                     records_qs = models.Site.objects.filter(
                         coordinates__isnull=False
                     ).filter(
