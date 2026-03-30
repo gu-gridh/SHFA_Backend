@@ -122,7 +122,7 @@ def get_list_records(verb, request, params):
     # Extract set parameter if present
     if "set" in params:
         set_spec = params.pop("set")[-1]
-        if set_spec not in ("shfa:images", "shfa:models", "comp"):
+        if set_spec not in ("shfa:images", "shfa:models", "shfa:comp"):
             errors.append(_error("noSetHierarchy"))
 
     images = None

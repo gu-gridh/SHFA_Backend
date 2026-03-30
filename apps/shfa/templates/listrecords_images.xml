@@ -47,7 +47,7 @@
                         </itemSpecification>
                         <itemDescription rdf:nodeID="desc001" />
                         
-                        <itemLabel>{{image.rock_carving_object.name}}</itemLabel>
+                        <itemLabel>{% if image.rock_carving_object %}{{image.rock_carving_object.name}}{% endif %}</itemLabel>
                         <itemMotiveWord>{% get_image_tags image %}</itemMotiveWord>
                         <itemTechnique>{{image.type.text}}</itemTechnique>
                         <itemNumber rdf:nodeID="num001"/>
@@ -63,7 +63,7 @@
                             <pres:type>{{image.type.text}}</pres:type>
                             <pres:id>{{image.id}}</pres:id>
                             <pres:idLabel>{{image.site.lamning_id}}</pres:idLabel>
-                            <pres:itemLabel>{{image.rock_carving_object.name}}</pres:itemLabel>
+                            <pres:itemLabel>{% if image.rock_carving_object %}{{image.rock_carving_object.name}}{% endif %}</pres:itemLabel>
                             <pres:description> Årtal: {{image.year}}, Institution: {{image.institution.name}}, Samling: {{image.collection.name}}</pres:description>        
                             <pres:context>
                             <pres:event>-</pres:event>

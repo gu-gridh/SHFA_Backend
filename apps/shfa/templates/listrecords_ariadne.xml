@@ -59,20 +59,6 @@
                         <URL>https://shfa.dh.gu.se/site/{{ site.id }}</URL>
                         <copyright>CC-BY</copyright>
 
-                        {# ===== Unique keywords across all items at this site ===== #}
-                        {% get_site_unique_keywords site as site_keywords %}
-                        {% for tag in site_keywords %}
-                            <keywords>
-                                <sourceLabel>{{ tag.text }}</sourceLabel>
-                                <sourceLabelLanguage>sv</sourceLabelLanguage>
-                                {% if tag.att_vocab %}
-                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
-                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
-                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
-                                {% endif %}
-                            </keywords>
-                        {% endfor %}
-
                         {# ===== Images ===== #}
                         {% for image in site.image_set.all %}
                         <image>

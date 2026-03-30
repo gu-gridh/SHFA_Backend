@@ -37,20 +37,6 @@
                         <group_name>{{ group.text }}</group_name>
                         <copyright>CC-BY</copyright>
 
-                        {# ===== Unique keywords across all items in this group ===== #}
-                        {% get_group_unique_keywords group as group_keywords %}
-                        {% for tag in group_keywords %}
-                            <keywords>
-                                <sourceLabel>{{ tag.text }}</sourceLabel>
-                                <sourceLabelLanguage>sv</sourceLabelLanguage>
-                                {% if tag.att_vocab %}
-                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
-                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
-                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
-                                {% endif %}
-                            </keywords>
-                        {% endfor %}
-
                         {# ===== 3D Models in this group ===== #}
                         {% for model_3d in group.shfa3d_set.all %}
                         <model3d>
