@@ -9,7 +9,7 @@
             <header>
                 <identifier>oai:shfa.dh.gu.se:group/{{ group.id }}</identifier>
                 <datestamp>{% now "Y-m-d\\TH:i:s\\Z" %}</datestamp>
-                <setSpec>shfa:models</setSpec>
+                <spec>shfa:models</spec>
             </header>
 
             <metadata>
@@ -64,6 +64,7 @@
                             <meshURL>{{ model_3d.three_d_mesh.mesh_url }}</meshURL>
                             {% endif %}
                             <URL>https://shfa.dh.gu.se/3d/{{ model_3d.id }}</URL>
+                            <viewerURL>https://shfa.dh.gu.se/viewer/?q={{ group.text|urlencode }}/mesh</viewerURL>
                             {% for creator in model_3d.creators.all %}
                                 <originator>{{ creator.name }}</originator>
                             {% endfor %}
@@ -92,6 +93,17 @@
                             {% for period in model_3d.datings.all %}
                                 <period>{{ period.text }}</period>
                             {% endfor %}
+                            {% for tag in model_3d.keywords.all %}
+                            <keywords>
+                                <sourceLabel>{{ tag.text }}</sourceLabel>
+                                <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.att_vocab %}
+                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
+                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
+                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
+                                {% endif %}
+                            </keywords>
+                            {% endfor %}
                         </model3d>
                         {% endfor %}
 
@@ -101,8 +113,8 @@
                             <image_id>{{ image.id }}</image_id>
                             <shfa_archive_id>{{ image.legacy_id }}</shfa_archive_id>
                             <has_title>{% get_image_title image %}</has_title>
-                            <description_en xml:lang="en">{{ image.type.english_translation }} of {{ image.rock_carving_object.name }}{% if image.site %}, {{ image.site.placename }}{% endif %}, created by {% get_image_creators image %} at {{ image.institution.name }} ({{ image.year }}).</description_en>
-                            <description_sv xml:lang="sv">{{ image.type.text }} av {{ image.rock_carving_object.name }}{% if image.site %}, {{ image.site.placename }}{% endif %}, skapad av {% get_image_creators image %} på {{ image.institution.name }} ({{ image.year }}).</description_sv>
+                            <description_en xml:lang="en">{{ image.type.english_translation }} of {% if image.rock_carving_object %}{{ image.rock_carving_object.name }}{% else %}unknown object{% endif %}{% if image.site %}, {{ image.site.placename }}{% endif %}, created by {% get_image_creators image %} at {{ image.institution.name }} ({{ image.year }}).</description_en>
+                            <description_sv xml:lang="sv">{{ image.type.text }} av {% if image.rock_carving_object %}{{ image.rock_carving_object.name }}{% else %}okänt objekt{% endif %}{% if image.site %}, {{ image.site.placename }}{% endif %}, skapad av {% get_image_creators image %} på {{ image.institution.name }} ({{ image.year }}).</description_sv>
                             <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ image.updated_at|date:"Y-m-d" }}</was_modified>
                             <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ image.created_at|date:"Y-m-d" }}</was_issued>
                             <imageURL>{{ image.file }}</imageURL>
@@ -119,6 +131,17 @@
                             <year>{{ image.year }}</year>
                             {% for period in image.dating_tags.all %}
                                 <period>{{ period.text }}</period>
+                            {% endfor %}
+                            {% for tag in image.keywords.all %}
+                            <keywords>
+                                <sourceLabel>{{ tag.text }}</sourceLabel>
+                                <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.att_vocab %}
+                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
+                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
+                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
+                                {% endif %}
+                            </keywords>
                             {% endfor %}
                         </image>
                         {% endfor %}

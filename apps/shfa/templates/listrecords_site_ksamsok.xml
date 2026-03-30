@@ -28,10 +28,10 @@
                     <url>https://shfa.dh.gu.se/site/{{ site.id }}</url>
                     <dataQuality rdf:resource="http://kulturarvsdata.se/resurser/DataQuality#raw" />
                     <itemSuperType rdf:resource="http://kulturarvsdata.se/resurser/EntitySuperType#object"/>
-                    <itemTitle>{{ site.placename }}</itemTitle>
+                    <itemTitle>{% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %}</itemTitle>
                     <itemLicense rdf:resource="http://kulturarvsdata.se/resurser/License#CC0"/>
                     <itemLicenseUrl rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
-                    <itemLabel>{{ site.placename }}</itemLabel>
+                    <itemLabel>{% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %}</itemLabel>
                     {% if site.raa_id %}
                     <itemNumber rdf:nodeID="num001"/>
                     {% endif %}
@@ -64,8 +64,8 @@
                         {% if site.lamning_id %}
                         <pres:idLabel>{{ site.lamning_id }}</pres:idLabel>
                         {% endif %}
-                        <pres:itemLabel>{{ site.placename }}</pres:itemLabel>
-                        <pres:description>Rock art site {{ site.placename }} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</pres:description>
+                        <pres:itemLabel>{% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %}</pres:itemLabel>
+                        <pres:description>Rock art site {% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</pres:description>
                         <pres:context>
                         <pres:event>-</pres:event>
                         <pres:placeLabel>Län:{{ site.province }}, Kommun:{{ site.municipality }}, Socken:{{ site.parish }}</pres:placeLabel>
@@ -97,6 +97,9 @@
                         <pres:src type="mesh">{{ model_3d.three_d_mesh.mesh_url }}</pres:src>
                         {% if model_3d.three_d_mesh.quality_url %}
                         <pres:src type="quality">{{ model_3d.three_d_mesh.quality_url }}</pres:src>
+                        {% endif %}
+                        {% if model_3d.group %}
+                        <pres:viewerURL>https://shfa.dh.gu.se/viewer/?q={{ model_3d.group.text|urlencode }}/mesh</pres:viewerURL>
                         {% endif %}
                         <pres:copyright>SHFA</pres:copyright>
                         <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
@@ -168,6 +171,9 @@
                     <numPhotos>{{ model_3d.three_d_mesh.num_photos }}</numPhotos>
                     {% endif %}
                     <mediaMotiveWord>{% get_3d_tags model_3d %}</mediaMotiveWord>
+                    {% if model_3d.group %}
+                    <viewerURL>https://shfa.dh.gu.se/viewer/?q={{ model_3d.group.text|urlencode }}/mesh</viewerURL>
+                    {% endif %}
                     <copyright>SHFA</copyright>
                     <mediaLicense rdf:resource="http://kulturarvsdata.se/resurser/license#by"/>
                     <mediaLicenseUrl rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>

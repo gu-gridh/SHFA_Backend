@@ -9,7 +9,7 @@
             <header>
                 <identifier>oai:shfa.dh.gu.se:group/{{ group.id }}</identifier>
                 <datestamp>{% now "Y-m-d\TH:i:s\Z" %}</datestamp>
-                <setSpec>shfa:models</setSpec>
+                <spec>shfa:models</spec>
             </header>
             <metadata>
                 <rdf:RDF xmlns="http://kulturarvsdata.se/ksamsok#"
@@ -91,6 +91,7 @@
                         {% if model_3d.three_d_mesh.quality_url %}
                         <pres:src type="quality">{{ model_3d.three_d_mesh.quality_url }}</pres:src>
                         {% endif %}
+                        <pres:viewerURL>https://shfa.dh.gu.se/viewer/?q={{ group.text|urlencode }}/mesh</pres:viewerURL>
                         <pres:copyright>SHFA</pres:copyright>
                         <pres:mediaLicense>http://kulturarvsdata.se/resurser/license#by</pres:mediaLicense>
                         </pres:model3d>
@@ -163,6 +164,7 @@
                     <numPhotos>{{ model_3d.three_d_mesh.num_photos }}</numPhotos>
                     {% endif %}
                     <mediaMotiveWord>{% get_3d_tags model_3d %}</mediaMotiveWord>
+                    <viewerURL>https://shfa.dh.gu.se/viewer/?q={{ group.text|urlencode }}/mesh</viewerURL>
                     <copyright>SHFA</copyright>
                     <mediaLicense rdf:resource="http://kulturarvsdata.se/resurser/license#by"/>
                     <mediaLicenseUrl rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>

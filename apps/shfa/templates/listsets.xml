@@ -6,7 +6,7 @@
 <ListSets>
     {% for set in sets %}
         <set>
-            <setSpec>{{ set.spec }}</setSpec>
+            <spec>{{ set.spec }}</spec>
             <setName>{{ set.name }}</setName>
             {% if set.description %}
                 <setDescription>{% autoescape off %}{{ set.description }}{% endautoescape %}</setDescription>

@@ -25,10 +25,10 @@
                         <rdf:type rdf:resource="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/AO_Entity"/>
                         <rdfs:label>Record SHFA Site {{ site.id }}</rdfs:label>
                         <has_publisher xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/Swedish%20Rock%20Art%20Research%20Archives"/>
-                        <has_title>{{ site.placename }}</has_title>
+                        <has_title>{% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %}</has_title>
                         <affiliation>SHFA</affiliation>
-                        <description_en xml:lang="en">Rock art site {{ site.placename }} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</description_en>
-                        <description_sv xml:lang="sv">Hällristningslokal {{ site.placename }} med {{ site.image_set.count }} bild(er) och {{ site.shfa3d_set.count }} 3D-modell(er).</description_sv>
+                        <description_en xml:lang="en">Rock art site {% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</description_en>
+                        <description_sv xml:lang="sv">Hällristningslokal {% if site.placename %}{{ site.placename }}{% else %}okänd{% endif %} med {{ site.image_set.count }} bild(er) och {{ site.shfa3d_set.count }} 3D-modell(er).</description_sv>
                         <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
                         <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
 
@@ -79,8 +79,8 @@
                             <image_id>{{ image.id }}</image_id>
                             <shfa_archive_id>{{ image.legacy_id }}</shfa_archive_id>
                             <has_title>{% get_image_title image %}</has_title>
-                            <description_en xml:lang="en">{{ image.type.english_translation }} of {{ image.rock_carving_object.name }}, {{ site.placename }}, created by {% get_image_creators image %} at {{ image.institution.name }} ({{ image.year }}).</description_en>
-                            <description_sv xml:lang="sv">{{ image.type.text }} av {{ image.rock_carving_object.name }}, {{ site.placename }}, skapad av {% get_image_creators image %} på {{ image.institution.name }} ({{ image.year }}).</description_sv>
+                            <description_en xml:lang="en">{{ image.type.english_translation }} of {% if image.rock_carving_object %}{{ image.rock_carving_object.name }}{% else %}unknown object{% endif %}, {% if site.placename %}{{ site.placename }}{% else %}unknown site{% endif %}, created by {% get_image_creators image %} at {{ image.institution.name }} ({{ image.year }}).</description_en>
+                            <description_sv xml:lang="sv">{{ image.type.text }} av {% if image.rock_carving_object %}{{ image.rock_carving_object.name }}{% else %}okänt objekt{% endif %}, {% if site.placename %}{{ site.placename }}{% else %}okänd lokal{% endif %}, skapad av {% get_image_creators image %} på {{ image.institution.name }} ({{ image.year }}).</description_sv>
                             <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ image.updated_at|date:"Y-m-d" }}</was_modified>
                             <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ image.created_at|date:"Y-m-d" }}</was_issued>
                             <imageURL>{{ image.file }}</imageURL>
@@ -98,6 +98,17 @@
                             {% for period in image.dating_tags.all %}
                                 <period>{{ period.text }}</period>
                             {% endfor %}
+                            {% for tag in image.keywords.all %}
+                            <keywords>
+                                <sourceLabel>{{ tag.text }}</sourceLabel>
+                                <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.att_vocab %}
+                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
+                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
+                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
+                                {% endif %}
+                            </keywords>
+                            {% endfor %}
                         </image>
                         {% endfor %}
 
@@ -106,14 +117,17 @@
                         <model3d>
                             <model_3d_id>{{ model_3d.id }}</model_3d_id>
                             <has_title>{% get_3d_title model_3d %}</has_title>
-                            <description_en xml:lang="en">3D model of {{ site.placename }}, created by {% get_3d_creators model_3d %} at {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_en>
-                            <description_sv xml:lang="sv">3D-modell av {{ site.placename }}, skapad av {% get_3d_creators model_3d %} på {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_sv>
+                            <description_en xml:lang="en">3D model of {% if site.placename %}{{ site.placename }}{% else %}unknown site{% endif %}, created by {% get_3d_creators model_3d %} at {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_en>
+                            <description_sv xml:lang="sv">3D-modell av {% if site.placename %}{{ site.placename }}{% else %}okänd lokal{% endif %}, skapad av {% get_3d_creators model_3d %} på {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_sv>
                             <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ model_3d.updated_at|date:"Y-m-d" }}</was_modified>
                             <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ model_3d.created_at|date:"Y-m-d" }}</was_issued>
                             {% if model_3d.three_d_mesh and model_3d.three_d_mesh.mesh_url %}
                             <meshURL>{{ model_3d.three_d_mesh.mesh_url }}</meshURL>
                             {% endif %}
                             <URL>https://shfa.dh.gu.se/3d/{{ model_3d.id }}</URL>
+                            {% if model_3d.group %}
+                            <viewerURL>https://shfa.dh.gu.se/viewer/?q={{ model_3d.group.text|urlencode }}/mesh</viewerURL>
+                            {% endif %}
                             {% for creator in model_3d.creators.all %}
                                 <originator>{{ creator.name }}</originator>
                             {% endfor %}
@@ -134,6 +148,17 @@
                             {% endif %}
                             {% for period in model_3d.datings.all %}
                                 <period>{{ period.text }}</period>
+                            {% endfor %}
+                            {% for tag in model_3d.keywords.all %}
+                            <keywords>
+                                <sourceLabel>{{ tag.text }}</sourceLabel>
+                                <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.att_vocab %}
+                                <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
+                                <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
+                                <targetURI>{{ tag.att_vocab.link }}</targetURI>
+                                {% endif %}
+                            </keywords>
                             {% endfor %}
                         </model3d>
                         {% endfor %}

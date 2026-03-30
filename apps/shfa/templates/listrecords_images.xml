@@ -10,7 +10,7 @@
                 <header>
                     <identifier>oai:shfa.dh.gu.se:objects/{{image.id}}</identifier>
                     <datestamp>{% now "Y-m-d\TH:i:s\Z" %}</datestamp>
-                    <setSpec>shfa:images</setSpec>
+                    <spec>shfa:images</spec>
                 </header>
                 <metadata>
                     <rdf:RDF xmlns="http://kulturarvsdata.se/ksamsok#"

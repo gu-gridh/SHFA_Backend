@@ -10,7 +10,7 @@
                 <header>
                     <identifier>oai:shfa.dh.gu.se:objects/{{ image.id }}</identifier>
                     <datestamp>{% now "Y-m-d\\TH:i:s\\Z" %}</datestamp>
-                    <setSpec>shfa:images</setSpec>
+                    <spec>shfa:images</spec>
                 </header>
 
                 <metadata>
@@ -31,8 +31,8 @@
                             <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{image.updated_at|date:"Y-m-d"}}</was_modified>
                             <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{image.created_at|date:"Y-m-d"}}</was_issued>
                             <affiliation>SHFA</affiliation>
-                            <description_en xml:lang="en">{{image.type.english_translation}} of {{image.rock_carving_object.name}}, {{image.site.placename}}, created by {% get_image_creators image %} at {{image.institution.name}} ({{image.year}}).</description_en>
-                            <description_sv xml:lang="sv">{{image.type.text}} av {{image.rock_carving_object.name}}, {{image.site.placename}}, skapad av {% get_image_creators image %} på {{image.institution.name}} ({{image.year}}).</description_sv>
+                            <description_en xml:lang="en">{{image.type.english_translation}} of {% if image.rock_carving_object %}{{image.rock_carving_object.name}}{% else %}unknown object{% endif %}, {% if image.site.placename %}{{image.site.placename}}{% else %}unknown site{% endif %}, created by {% get_image_creators image %} at {{image.institution.name}} ({{image.year}}).</description_en>
+                            <description_sv xml:lang="sv">{{image.type.text}} av {% if image.rock_carving_object %}{{image.rock_carving_object.name}}{% else %}okänt objekt{% endif %}, {% if image.site.placename %}{{image.site.placename}}{% else %}okänd lokal{% endif %}, skapad av {% get_image_creators image %} på {{image.institution.name}} ({{image.year}}).</description_sv>
                             <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
                             <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
                             
