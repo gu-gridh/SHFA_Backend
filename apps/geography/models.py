@@ -21,7 +21,8 @@ class Region(abstract.AbstractBaseModel):
         abstract = True
 
 class Country(Region):
-
+    english_translation = models.CharField(max_length=256, verbose_name=_("english translation"), blank=True, null=True)
+    wikidata_code = models.CharField(max_length=24, verbose_name=_("wikidata code"), blank=True, null=True)
     class Meta:
         verbose_name = _("country")
         verbose_name_plural = _("country.plural")

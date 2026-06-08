@@ -8,7 +8,7 @@ from shfa.utils import get_fields, DEFAULT_EXCLUDE, DEFAULT_FIELDS
 class CountryAdmin(admin.GISModelAdmin):
     fields = get_fields(Country, exclude=DEFAULT_EXCLUDE+["id"])
     readonly_fields = [*DEFAULT_FIELDS]
-    list_display = ['name', 'code']
+    list_display = ['name', 'code', 'english_translation', 'wikidata_code']
     list_filter = ['name', 'code']
     search_fields = ['name', 'code']
 
