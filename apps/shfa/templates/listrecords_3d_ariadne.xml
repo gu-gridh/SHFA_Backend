@@ -71,6 +71,9 @@
                             {% endif %}
                             {% if model_3d.site %}
                             <site_name>{{ model_3d.site.placename }}</site_name>
+                            <country>{{ model_3d.site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                            <country_english_translation>{{ model_3d.site.municipality.superregion.superregion.superregion.superregion.english_translation }}</country_english_translation>
+                            <country_wikidata_code>{{ model_3d.site.municipality.superregion.superregion.superregion.superregion.wikidata_code }}</country_wikidata_code>
                             {% if model_3d.site.coordinates %}
                             <latitude>{{ model_3d.site.coordinates.y }}</latitude>
                             <longitude>{{ model_3d.site.coordinates.x }}</longitude>

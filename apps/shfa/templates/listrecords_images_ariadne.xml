@@ -57,6 +57,8 @@
                             {% endif %}
                             
                             <country>{{ image.site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                            <country_english_translation>{{ image.site.municipality.superregion.superregion.superregion.superregion.english_translation }}</country_english_translation>
+                            <country_wikidata_code>{{ image.site.municipality.superregion.superregion.superregion.superregion.wikidata_code }}</country_wikidata_code>
                             <municipality>{{ image.site.municipality.superregion.name }}</municipality>
                             <province>{{ image.site.province.name }}</province>
                             <parish>{{image.site.parish.name}}</parish>

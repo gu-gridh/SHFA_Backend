@@ -50,6 +50,8 @@
 
                         {# ===== Location ===== #}
                         <country>{{ site.municipality.superregion.superregion.superregion.superregion.name }}</country>
+                        <country_english_translation>{{ site.municipality.superregion.superregion.superregion.superregion.english_translation }}</country_english_translation>
+                        <country_wikidata_code>{{ site.municipality.superregion.superregion.superregion.superregion.wikidata_code }}</country_wikidata_code>
                         <municipality>{{ site.municipality.superregion.name }}</municipality>
                         <province>{{ site.province.name }}</province>
                         <parish>{{ site.parish.name }}</parish>
