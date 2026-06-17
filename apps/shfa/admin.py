@@ -21,7 +21,7 @@ MAP_WIDGETS = {
                     "center": (57.124093162383616, 7.830100815389867),
                 },
                 "tileLayer": {
-                    "urlTemplate": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    "urlTemplate": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                     "options": {"maxZoom": 20},
                 },
             }
