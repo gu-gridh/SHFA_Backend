@@ -68,7 +68,16 @@
 
                     {% if data.three_d_mesh and data.three_d_mesh.method %}
                     <method>{{data.three_d_mesh.method.text}}</method>
+                    {% if data.three_d_mesh.method.english_translation %}
+                    <method_english_translation>{{ data.three_d_mesh.method.english_translation }}</method_english_translation>
                     {% endif %}
+                    {% endif %}
+                    {% for weather in data.three_d_mesh.weather.all %}
+                    <weather>{{ weather.text }}</weather>
+                    {% if weather.english_translation %}
+                    <weather_english_translation>{{ weather.english_translation }}</weather_english_translation>
+                    {% endif %}
+                    {% endfor %}
                     {% if data.date %}
                     <date>{{data.date|date:"Y-m-d"}}</date>
                     {% endif %}
@@ -85,12 +94,18 @@
 
                     {% for period in data.datings.all %}
                         <period>{{ period.text }}</period>
+                        {% if period.english_translation %}
+                        <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                        {% endif %}
                     {% endfor %}
 
                     {% for tag in data.keywords.all %}
                         <keywords>
                             <sourceLabel>{{tag.text}}</sourceLabel>
                             <sourceLabelLanguage>sv</sourceLabelLanguage>
+                            {% if tag.english_translation %}
+                            <sourceLabel_english_translation>{{ tag.english_translation }}</sourceLabel_english_translation>
+                            {% endif %}
                             {% if tag.att_vocab %}
                             <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
                             <targetLabel>{{tag.att_vocab.term}}</targetLabel>

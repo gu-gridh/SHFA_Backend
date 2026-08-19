@@ -74,6 +74,9 @@
                     {% endfor %}
 
                     <type>{{data.type.text}}</type>
+                    {% if data.type.english_translation %}
+                    <type_english_translation>{{ data.type.english_translation }}</type_english_translation>
+                    {% endif %}
                     {% if data.subtype %}
                     <subtype>{{data.subtype.english_translation}}</subtype>
                     {% endif %}
@@ -81,12 +84,18 @@
 
                     {% for period in data.dating_tags.all %}
                         <period>{{ period.text }}</period>
+                        {% if period.english_translation %}
+                        <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                        {% endif %}
                     {% endfor %}
 
                     {% for tag in data.keywords.all %}
                         <keywords>
                             <sourceLabel>{{tag.text}}</sourceLabel>
                             <sourceLabelLanguage>sv</sourceLabelLanguage>
+                            {% if tag.english_translation %}
+                            <sourceLabel_english_translation>{{ tag.english_translation }}</sourceLabel_english_translation>
+                            {% endif %}
                             <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
                             <targetLabel>{{tag.att_vocab.terms}}</targetLabel>
                             <targetURI>{{tag.att_vocab.link}}</targetURI>

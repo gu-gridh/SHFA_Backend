@@ -76,6 +76,9 @@
                             {% endfor %}
 
                             <type>{{image.type.text}}</type>
+                            {% if image.type.english_translation %}
+                            <type_english_translation>{{ image.type.english_translation }}</type_english_translation>
+                            {% endif %}
                             {% if image.subtype %}
                             <subtype>{{image.subtype.english_translation}}</subtype>
                             {% endif %}
@@ -83,12 +86,18 @@
 
                             {% for period in image.dating_tags.all %}
                                 <period>{{ period.text }}</period>
+                                {% if period.english_translation %}
+                                <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                                {% endif %}
                             {% endfor %}
 
                             {% for tag in image.keywords.all %}
                                 <keywords>
                                     <sourceLabel>{{tag.text}}</sourceLabel>
                                     <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                    {% if tag.english_translation %}
+                                    <sourceLabel_english_translation>{{ tag.english_translation }}</sourceLabel_english_translation>
+                                    {% endif %}
                                     {% if tag.att_vocab %}
                                     <matchURI>{{tag.att_vocab.skos_match}}</matchURI>
                                     <targetLabel>{{tag.att_vocab.terms}}</targetLabel>

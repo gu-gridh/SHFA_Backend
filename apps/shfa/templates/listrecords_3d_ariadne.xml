@@ -56,7 +56,16 @@
                             {% endfor %}
                             {% if model_3d.three_d_mesh and model_3d.three_d_mesh.method %}
                             <method>{{ model_3d.three_d_mesh.method.text }}</method>
+                            {% if model_3d.three_d_mesh.method.english_translation %}
+                            <method_english_translation>{{ model_3d.three_d_mesh.method.english_translation }}</method_english_translation>
                             {% endif %}
+                            {% endif %}
+                            {% for weather in model_3d.three_d_mesh.weather.all %}
+                            <weather>{{ weather.text }}</weather>
+                            {% if weather.english_translation %}
+                            <weather_english_translation>{{ weather.english_translation }}</weather_english_translation>
+                            {% endif %}
+                            {% endfor %}
                             {% if model_3d.date %}
                             <date>{{ model_3d.date|date:"Y-m-d" }}</date>
                             {% endif %}
@@ -81,11 +90,17 @@
                             {% endif %}
                             {% for period in model_3d.datings.all %}
                                 <period>{{ period.text }}</period>
+                                {% if period.english_translation %}
+                                <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                                {% endif %}
                             {% endfor %}
                             {% for tag in model_3d.keywords.all %}
                             <keywords>
                                 <sourceLabel>{{ tag.text }}</sourceLabel>
                                 <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.english_translation %}
+                                <sourceLabel_english_translation>{{ tag.english_translation }}</sourceLabel_english_translation>
+                                {% endif %}
                                 {% if tag.att_vocab %}
                                 <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
                                 <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
@@ -114,17 +129,26 @@
                                 <originator>{{ person.english_translation }}</originator>
                             {% endfor %}
                             <type>{{ image.type.text }}</type>
+                            {% if image.type.english_translation %}
+                            <type_english_translation>{{ image.type.english_translation }}</type_english_translation>
+                            {% endif %}
                             {% if image.subtype %}
                             <subtype>{{ image.subtype.english_translation }}</subtype>
                             {% endif %}
                             <year>{{ image.year }}</year>
                             {% for period in image.dating_tags.all %}
                                 <period>{{ period.text }}</period>
+                                {% if period.english_translation %}
+                                <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                                {% endif %}
                             {% endfor %}
                             {% for tag in image.keywords.all %}
                             <keywords>
                                 <sourceLabel>{{ tag.text }}</sourceLabel>
                                 <sourceLabelLanguage>sv</sourceLabelLanguage>
+                                {% if tag.english_translation %}
+                                <sourceLabel_english_translation>{{ tag.english_translation }}</sourceLabel_english_translation>
+                                {% endif %}
                                 {% if tag.att_vocab %}
                                 <matchURI>{{ tag.att_vocab.skos_match }}</matchURI>
                                 <targetLabel>{{ tag.att_vocab.terms }}</targetLabel>
