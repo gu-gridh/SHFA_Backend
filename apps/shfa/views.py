@@ -36,9 +36,8 @@ class SiteViewSet(DynamicDepthViewSet):
 class SiteGeoViewSet(GeoViewSet):
 
     serializer_class = serializers.SiteGeoSerializer
-    images = models.Image.objects.all()
     queryset = models.Site.objects.filter(
-        id__in=list(images.values_list('site', flat=True))
+        id__in=models.Image.objects.values('site')
     ).order_by('raa_id', 'lamning_id', 'placename')
 
     filterset_fields = get_fields(
