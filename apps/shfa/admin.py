@@ -81,6 +81,7 @@ class KeywordTagAdmin(admin.ModelAdmin):
     readonly_fields = ['legacy_id']
     list_display = ["text", "english_translation"]
     search_fields = ["text", "english_translation"]
+    ordering = ('text',)
 
 
 @admin.register(DatingTag)
@@ -89,6 +90,7 @@ class DatingTagAdmin(admin.ModelAdmin):
     readonly_fields = ['legacy_id']
     list_display = ["text", "english_translation"]
     search_fields = ["text", "english_translation"]
+    ordering = ('text',)
 
 
 @admin.register(Image)

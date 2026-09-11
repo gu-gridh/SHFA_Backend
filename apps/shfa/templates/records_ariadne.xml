@@ -66,7 +66,7 @@
                     <imageURL>{{data.file}}</imageURL>
                     <URL>https://shfa.dh.gu.se/image/{{data.id}}</URL>
                     <iiifFile>{{data.iiif_file}}</iiifFile>
-                    <iiifManifest>{{data.iiif_file}}/info.json</iiifManifest>
+                    <iiifManifest>https://shfa.dh.gu.se/api/iiif/manifest/{{data.id}}</iiifManifest>
                     <copyright>CC-BY</copyright>
 
                     {% for person in data.people.all %}
