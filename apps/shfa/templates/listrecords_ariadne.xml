@@ -25,10 +25,10 @@
                         <rdf:type rdf:resource="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/AO_Entity"/>
                         <rdfs:label>Record SHFA Site {{ site.id }}</rdfs:label>
                         <has_publisher xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/Swedish%20Rock%20Art%20Research%20Archives"/>
-                        <has_title>{% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %}</has_title>
+                        <has_title>{% if site.placename %}{{ site.placename }}{% else %}{{site.lamning_id}}{% endif %}</has_title>
                         <affiliation>SHFA</affiliation>
-                        <description_en xml:lang="en">Rock art site {% if site.placename %}{{ site.placename }}{% else %}unknown{% endif %} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</description_en>
-                        <description_sv xml:lang="sv">Hällristningslokal {% if site.placename %}{{ site.placename }}{% else %}okänd{% endif %} med {{ site.image_set.count }} bild(er) och {{ site.shfa3d_set.count }} 3D-modell(er).</description_sv>
+                        <description_en xml:lang="en">Rock art site {% if site.placename %}{{ site.placename }}{% else %}{{site.lamning_id}}{% endif %} with {{ site.image_set.count }} image(s) and {{ site.shfa3d_set.count }} 3D model(s).</description_en>
+                        <description_sv xml:lang="sv">Hällristningslämning {% if site.placename %}{{ site.placename }}{% else %}{{site.lamning_id}}{% endif %} med {{ site.image_set.count }} bild(er) och {{ site.shfa3d_set.count }} 3D-modell(er).</description_sv>
                         <has_access_rights xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://creativecommons.org/licenses/by/4.0/" />
                         <has_responsible xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:resource="https://ariadne-infrastructure.eu/aocat/Agent/SHFA"/>
 
@@ -60,6 +60,14 @@
                         <longitude>{{ site.coordinates.x }}</longitude>
                         <URL>https://shfa.dh.gu.se/site/{{ site.id }}</URL>
                         <copyright>CC-BY</copyright>
+
+                        {# ===== Dating ===== #}
+                        {% for period in site.dating_tags.all() %}
+                            <period>{{ period.text }}</period>
+                            {% if period.english_translation %}
+                            <period_english_translation>{{ period.english_translation }}</period_english_translation>
+                            {% endif %}
+                        {% endfor %}
 
                         {# ===== Images ===== #}
                         {% for image in site.image_set.all %}
