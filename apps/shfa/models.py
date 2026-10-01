@@ -329,6 +329,9 @@ class Site(abstract.AbstractBaseModel):
     stednavn = models.CharField(max_length=256, null=True, blank=True, help_text=_(
         'stednavn from Denmark sites'))
 
+    dating_tags = models.ManyToManyField(DatingTag, blank=True, related_name="sites", verbose_name=_(
+            "Datings"), help_text=_("A list of estimated dating(s) of the site, used when providing data externally"))
+
     def __str__(self) -> str:
 
         if self.raa_id:

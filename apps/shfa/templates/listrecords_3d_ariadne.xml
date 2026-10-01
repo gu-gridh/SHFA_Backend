@@ -42,8 +42,8 @@
                         <model3d>
                             <model_3d_id>{{ model_3d.id }}</model_3d_id>
                             <has_title>{% get_3d_title model_3d %}</has_title>
-                            <description_en xml:lang="en">3D model of {% if model_3d.site %}{{ model_3d.site.placename }}{% else %}unknown site{% endif %}, created by {% get_3d_creators model_3d %} at {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_en>
-                            <description_sv xml:lang="sv">3D-modell av {% if model_3d.site %}{{ model_3d.site.placename }}{% else %}okänd lokal{% endif %}, skapad av {% get_3d_creators model_3d %} på {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_sv>
+                            <description_en xml:lang="en">3D model of {% if model_3d.site %}{{ model_3d.site.placename }}{% else %}{{model_3d.site.lamning_id}}{% endif %}, created by {% get_3d_creators model_3d %} at {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_en>
+                            <description_sv xml:lang="sv">3D-modell av {% if model_3d.site %}{{ model_3d.site.placename }}{% else %}{{model_3d.site.lamning_id}}{% endif %}, skapad av {% get_3d_creators model_3d %} på {{ model_3d.institution.name }}{% if model_3d.date %} ({{ model_3d.date|date:"Y" }}){% endif %}.</description_sv>
                             <was_modified xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ model_3d.updated_at|date:"Y-m-d" }}</was_modified>
                             <was_issued xmlns="https://www.ariadne-infrastructure.eu/resource/ao/cat/1.1/" rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">{{ model_3d.created_at|date:"Y-m-d" }}</was_issued>
                             {% if model_3d.three_d_mesh and model_3d.three_d_mesh.mesh_url %}
