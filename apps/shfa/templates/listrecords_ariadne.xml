@@ -62,7 +62,7 @@
                         <copyright>CC-BY</copyright>
 
                         {# ===== Dating ===== #}
-                        {% for period in site.dating_tags.all() %}
+                        {% for period in site.dating_tags.all %}
                             <period>{{ period.text }}</period>
                             {% if period.english_translation %}
                             <period_english_translation>{{ period.english_translation }}</period_english_translation>
